@@ -45,6 +45,20 @@ describe('writeFileAtomic', () => {
     expect(readdirSync(root)).toEqual(['out.txt']);
     expect(existsSync(file)).toBe(true);
   });
+
+  it('cleans up temp file on write failure', () => {
+    const root = tmp();
+    // Create a file at the target location to block writes
+    const blockingFile = join(root, 'blocking');
+    writeFileSync(blockingFile, 'x');
+    // Try to write to a path where the parent is a file, not a directory
+    const failingPath = join(blockingFile, 'nested.txt');
+    expect(() => writeFileAtomic(failingPath, 'data')).toThrow();
+    // Verify no .tmp files are left behind in the root
+    const files = readdirSync(root);
+    const tmpFiles = files.filter((f) => f.endsWith('.tmp'));
+    expect(tmpFiles).toHaveLength(0);
+  });
 });
 
 describe('sha256', () => {
