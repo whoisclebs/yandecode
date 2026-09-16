@@ -7,7 +7,7 @@ export { CONFIG_FILENAME, ConfigSchema, DEFAULT_CONFIG, type YandeCodeConfig };
 
 export function loadConfig(projectRoot: string): YandeCodeConfig {
   const file = join(projectRoot, CONFIG_FILENAME);
-  if (!existsSync(file)) return DEFAULT_CONFIG;
+  if (!existsSync(file)) return ConfigSchema.parse({});
   let raw: unknown;
   try {
     raw = JSON.parse(readFileSync(file, 'utf8'));

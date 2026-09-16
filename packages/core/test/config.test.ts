@@ -12,6 +12,14 @@ describe('config', () => {
     expect(loadConfig(tmp())).toEqual(DEFAULT_CONFIG);
   });
 
+  it('returns a fresh object per call when yandecode.json is missing (no shared singleton aliasing)', () => {
+    const root = tmp();
+    const first = loadConfig(root);
+    const second = loadConfig(root);
+    expect(first).not.toBe(second);
+    expect(first).toEqual(second);
+  });
+
   it('merges partial file over defaults', () => {
     const root = tmp();
     writeFileSync(join(root, CONFIG_FILENAME), JSON.stringify({ swarm: { maxAgents: 2 } }));
