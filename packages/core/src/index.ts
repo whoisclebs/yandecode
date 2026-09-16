@@ -18,3 +18,11 @@ export {
 export { resolveInsideRoot } from './security/paths.js';
 export { writeFileAtomic } from './security/atomic-write.js';
 export { sha256 } from './security/hash.js';
+export { openDatabase, type Database } from './persistence/open.js';
+export {
+  MIGRATIONS,
+  SCHEMA_VERSION,
+  runMigrations,
+  schemaVersion,
+  type Migration,
+} from './persistence/migrations/index.js';

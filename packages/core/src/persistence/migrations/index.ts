@@ -1,0 +1,39 @@
+import type { Database } from '../open.js';
+import { up as initial } from './0001-initial.js';
+
+export interface Migration {
+  version: number;
+  name: string;
+  up: string;
+}
+
+export const MIGRATIONS: readonly Migration[] = [{ version: 1, name: 'initial', up: initial }];
+
+export const SCHEMA_VERSION: number = MIGRATIONS[MIGRATIONS.length - 1]?.version ?? 0;
+
+export function schemaVersion(db: Database): number {
+  const table = db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations'")
+    .get();
+  if (!table) return 0;
+  const row = db.prepare('SELECT COALESCE(MAX(version), 0) AS v FROM schema_migrations').get() as { v: number };
+  return row.v;
+}
+
+export function runMigrations(db: Database): { applied: number[]; current: number } {
+  db.exec(
+    'CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT NOT NULL)',
+  );
+  const current = schemaVersion(db);
+  const applied: number[] = [];
+  const record = db.prepare('INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)');
+  for (const m of MIGRATIONS) {
+    if (m.version <= current) continue;
+    db.transaction(() => {
+      db.exec(m.up);
+      record.run(m.version, m.name, new Date().toISOString());
+    })();
+    applied.push(m.version);
+  }
+  return { applied, current: schemaVersion(db) };
+}
