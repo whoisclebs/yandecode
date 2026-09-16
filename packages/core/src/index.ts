@@ -26,3 +26,4 @@ export {
   schemaVersion,
   type Migration,
 } from './persistence/migrations/index.js';
+export { StateService } from './persistence/state-service.js';
