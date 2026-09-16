@@ -1,0 +1,28 @@
+{
+  "name": "@yandecode/retrieval",
+  "version": "0.1.0",
+  "description": "YandeCode retrieval: embeddings, chunking, indexing, hybrid search (Phase 2)",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@yandecode/core": "0.1.0"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "@yandecode/swarm",
+  "version": "0.1.0",
+  "description": "YandeCode swarm: task DAG, scheduler, leases, messaging, memory (Phase 4/5)",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@yandecode/core": "0.1.0",
+    "@yandecode/retrieval": "0.1.0"
+  }
+}

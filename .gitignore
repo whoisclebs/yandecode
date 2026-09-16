@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.yandecode/
+.DS_Store
+docs/superpowers/

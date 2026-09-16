@@ -1,0 +1,43 @@
+{
+  "name": "yandecode",
+  "version": "0.1.0",
+  "description": "YandeCode CLI — local-first agent harness for Claude Code",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "yandecode": "./dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/whoisclebs/yandecode.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/whoisclebs/yandecode",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@yandecode/core": "0.1.0",
+    "@yandecode/plugin": "0.1.0",
+    "@yandecode/retrieval": "0.1.0",
+    "@yandecode/swarm": "0.1.0",
+    "commander": "^15.0.0",
+    "zod": "^4.6.5"
+  }
+}
