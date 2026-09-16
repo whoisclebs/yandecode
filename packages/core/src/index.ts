@@ -15,3 +15,6 @@ export {
   workspacePathsFor,
   type WorkspacePaths,
 } from './workspace/paths.js';
+export { resolveInsideRoot } from './security/paths.js';
+export { writeFileAtomic } from './security/atomic-write.js';
+export { sha256 } from './security/hash.js';
