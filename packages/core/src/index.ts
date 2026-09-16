@@ -8,3 +8,10 @@ export {
   writeDefaultConfig,
   type YandeCodeConfig,
 } from './config/load.js';
+export {
+  ensureWorkspaceDirs,
+  resolveWorkspace,
+  userCacheDir,
+  workspacePathsFor,
+  type WorkspacePaths,
+} from './workspace/paths.js';
