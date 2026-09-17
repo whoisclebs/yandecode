@@ -9,3 +9,8 @@ export {
   resolveModelCacheDir,
   type ArcticOptions,
 } from './embeddings/arctic.js';
+export { DEFAULT_LIMITS, type Chunk, type ChunkLimits, type Chunker } from './chunking/types.js';
+export { LineChunker } from './chunking/line-chunker.js';
+export { MarkdownChunker } from './chunking/markdown-chunker.js';
+export { GRAMMAR_FILES, detectLanguage } from './chunking/languages.js';
+export { identifiersOf } from './lexical/identifiers.js';
