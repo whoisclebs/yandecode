@@ -51,3 +51,4 @@ export {
   type TaskRecord,
   type TaskStatus,
 } from './persistence/repositories/tasks.js';
+export { LeaseRepository, LEASE_TTL_MS, type LeaseRecord } from './persistence/repositories/leases.js';
