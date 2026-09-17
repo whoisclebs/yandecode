@@ -2,4 +2,6 @@
 // Later tasks add one `import './<command>.js';` line here.
 import './init.js';
 import './uninstall.js';
+import './doctor.js';
+import './status.js';
 export {};
