@@ -8,14 +8,9 @@ import {
 import { openDatabase } from '../src/persistence/open.js';
 
 const EXPECTED_TABLES = [
-  'schema_migrations',
-  'sessions',
-  'events',
-  'documents',
-  'chunks',
-  'vector_index_meta',
-  'index_dirty',
-  'vector_id_seq',
+  'schema_migrations', 'sessions', 'events', 'documents', 'chunks', 'vector_index_meta', 'index_dirty', 'vector_id_seq',
+  'swarms', 'workspaces', 'tasks', 'task_dependencies', 'task_paths', 'leases', 'messages',
+  'memories', 'memory_feedback',
 ];
 
 describe('migrations', () => {
@@ -48,8 +43,7 @@ describe('migrations', () => {
       .map((r) => (r as { name: string }).name);
     for (const t of EXPECTED_TABLES) expect(names).toContain(t);
     expect(names).toContain('chunks_fts');
-    expect(names).not.toContain('swarms');
-    expect(names).not.toContain('memories');
+    expect(names).toContain('memories_fts');
   });
 
   it('keeps chunks_fts in sync through triggers', () => {
@@ -90,6 +84,6 @@ describe('migrations', () => {
     runMigrations(db);
     const cols = (db.prepare('PRAGMA table_info(chunks)').all() as { name: string }[]).map((c) => c.name);
     expect(cols).toContain('embedding');
-    expect(SCHEMA_VERSION).toBe(2);
+    expect(SCHEMA_VERSION).toBe(3);
   });
 });
