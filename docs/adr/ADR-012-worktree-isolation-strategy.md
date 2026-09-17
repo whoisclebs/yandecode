@@ -34,7 +34,14 @@ security, researcher), never needs one. When `needsWorktree` is set, the dispatc
 responsible for creating the isolated workspace (via `superpowers:using-git-worktrees`
 or Claude Code's native worktree tooling) before spawning those workers, and for
 merging or discarding the result afterward — the swarm layer tracks a `workspaces` row
-per reservation (Task 4) but never runs git itself.
+per reservation (Task 4) but never runs git itself. The `WorktreeCreate`/`WorktreeRemove`
+hooks populate that row on a best-effort basis: their payload carries only a filesystem
+path, never a swarmId or taskId, so a created workspace is associated with whichever
+swarm is currently most-recently-active (`SwarmService.getMostRecentActiveSwarm`) rather
+than a specific task. This is a reasonable heuristic given v0 runs one swarm at a time
+against a given working tree in practice, not a guaranteed-correct correlation — a
+future version that runs multiple concurrent swarms against the same repo would need the
+dispatcher to pass real identifiers through instead.
 
 ## Alternatives considered
 

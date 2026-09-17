@@ -82,6 +82,17 @@ export class WorkspaceRepository {
     return rows.map(fromRow);
   }
 
+  findActiveByPath(path: string): WorkspaceRecord | null {
+    const row = this.state.read((db) =>
+      db
+        .prepare(
+          'SELECT * FROM workspaces WHERE path = ? AND removed_at IS NULL ORDER BY created_at DESC LIMIT 1',
+        )
+        .get(path),
+    ) as Row | undefined;
+    return row ? fromRow(row) : null;
+  }
+
   markRemoved(id: string): Promise<void> {
     return this.state.write((db) => {
       db.prepare('UPDATE workspaces SET removed_at = ? WHERE id = ?').run(nowIso(), id);

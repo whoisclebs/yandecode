@@ -63,4 +63,30 @@ describe('SwarmRepository', () => {
     expect(repo.listActive().map((s) => s.id)).toEqual([a.id]);
     state.close();
   });
+
+  it('getMostRecentActive returns the newest active swarm, or null once none are active', async () => {
+    const state = open();
+    const repo = new SwarmRepository(state);
+    expect(repo.getMostRecentActive()).toBeNull();
+    const a = await repo.create({
+      title: 'a',
+      goal: 'g',
+      strategy: 'adaptive',
+      maxAgents: 2,
+      sessionId: null,
+    });
+    const b = await repo.create({
+      title: 'b',
+      goal: 'g',
+      strategy: 'adaptive',
+      maxAgents: 2,
+      sessionId: null,
+    });
+    expect(repo.getMostRecentActive()?.id).toBe(b.id);
+    await repo.setStatus(b.id, 'cancelled');
+    expect(repo.getMostRecentActive()?.id).toBe(a.id);
+    await repo.setStatus(a.id, 'completed');
+    expect(repo.getMostRecentActive()).toBeNull();
+    state.close();
+  });
 });

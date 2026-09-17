@@ -137,6 +137,24 @@ export async function handleHook(
         event: event === 'WorktreeCreate' ? 'worktree_created' : 'worktree_removed',
         data: { path: worktreePath },
       });
+      const swarmRt = createSwarmRuntime(rt);
+      if (event === 'WorktreeCreate') {
+        // Best-effort: the hook payload carries only a path, no swarmId/taskId, so the new
+        // workspace row is associated with whichever swarm is currently most-recently-active
+        // (see SwarmService.createWorkspace's own doc comment). If no swarm is active, there's
+        // nothing to associate it with and the row is simply not created.
+        const swarm = swarmRt.swarmService.getMostRecentActiveSwarm();
+        if (swarm) {
+          await swarmRt.swarmService.createWorkspace({
+            swarmId: swarm.id,
+            kind: 'worktree',
+            name: worktreePath,
+            path: worktreePath,
+          });
+        }
+      } else {
+        await swarmRt.swarmService.removeWorkspaceByPath(worktreePath);
+      }
     }
     return { stdout: '' };
   }

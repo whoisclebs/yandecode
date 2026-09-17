@@ -377,3 +377,40 @@ describe('SwarmService.workspaceReserve / workspaceRelease', () => {
     state.close();
   });
 });
+
+describe('SwarmService.createWorkspace / removeWorkspaceByPath / getMostRecentActiveSwarm', () => {
+  it('getMostRecentActiveSwarm returns the newest active swarm, or null when none are active', async () => {
+    const { state, service } = setup();
+    expect(service.getMostRecentActiveSwarm()).toBeNull();
+    await service.createSwarm({ title: 'a', goal: 'g', strategy: 'adaptive', sessionId: null });
+    const b = await service.createSwarm({
+      title: 'b',
+      goal: 'g',
+      strategy: 'adaptive',
+      sessionId: null,
+    });
+    expect(service.getMostRecentActiveSwarm()?.id).toBe(b.id);
+    state.close();
+  });
+
+  it('createWorkspace records a worktree, and removeWorkspaceByPath marks the matching active one removed', async () => {
+    const { state, service } = setup();
+    const swarm = await service.createSwarm({
+      title: 't',
+      goal: 'g',
+      strategy: 'adaptive',
+      sessionId: null,
+    });
+    const ws = await service.createWorkspace({
+      swarmId: swarm.id,
+      kind: 'worktree',
+      name: 'wt',
+      path: '/repo/.worktrees/wt',
+    });
+    expect(ws.removedAt).toBeNull();
+    await service.removeWorkspaceByPath('/repo/.worktrees/wt');
+    // removeWorkspaceByPath is a no-op, not an error, for a path with nothing active to remove.
+    await service.removeWorkspaceByPath('/repo/.worktrees/never-created');
+    state.close();
+  });
+});

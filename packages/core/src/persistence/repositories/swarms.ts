@@ -111,4 +111,15 @@ export class SwarmRepository {
     ) as Row[];
     return rows.map(fromRow);
   }
+
+  getMostRecentActive(): SwarmRecord | null {
+    const row = this.state.read((db) =>
+      db
+        .prepare(
+          "SELECT * FROM swarms WHERE status = 'active' ORDER BY created_at DESC, id DESC LIMIT 1",
+        )
+        .get(),
+    ) as Row | undefined;
+    return row ? fromRow(row) : null;
+  }
 }

@@ -217,6 +217,30 @@ describe('handleHook: SubagentStop, WorktreeCreate/Remove, SessionEnd swarm clea
     rt.close();
   });
 
+  it('WorktreeCreate registers a workspace row against the most-recently-active swarm, and WorktreeRemove marks it removed', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'yc-hook-worktree-active-'));
+    writeFileSync(join(dir, 'yandecode.json'), '{}');
+    const rt = openRuntime(dir);
+    const service = swarmService(rt);
+    const swarm = await service.createSwarm({
+      title: 't',
+      goal: 'g',
+      strategy: 'adaptive',
+      sessionId: null,
+    });
+
+    await handleHook('WorktreeCreate', { worktree_path: '/tmp/wt-active' }, rt);
+    const workspaces = new WorkspaceRepository(rt.state);
+    const created = workspaces.listBySwarm(swarm.id);
+    expect(created).toHaveLength(1);
+    expect(created[0]!.path).toBe('/tmp/wt-active');
+    expect(created[0]!.removedAt).toBeNull();
+
+    await handleHook('WorktreeRemove', { worktree_path: '/tmp/wt-active' }, rt);
+    expect(workspaces.get(created[0]!.id)!.removedAt).not.toBeNull();
+    rt.close();
+  });
+
   it('SessionEnd cancels every active swarm tied to that session and releases its leases', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'yc-hook-sessionend-'));
     writeFileSync(join(dir, 'yandecode.json'), '{}');

@@ -12,6 +12,7 @@ import {
   type SwarmStrategy,
   type TaskRecord,
   type TaskStatus,
+  type WorkspaceKind,
   type WorkspaceRecord,
 } from '@yandecode/core';
 import { validateAcyclic, type DagNode } from '../scheduler/dag.js';
@@ -226,6 +227,32 @@ export class SwarmService {
   listActiveSwarmsForSession(sessionId: string | null): SwarmRecord[] {
     if (!sessionId) return [];
     return this.deps.swarms.listActive().filter((s) => s.sessionId === sessionId);
+  }
+
+  getMostRecentActiveSwarm(): SwarmRecord | null {
+    return this.deps.swarms.getMostRecentActive();
+  }
+
+  // Best-effort worktree bookkeeping driven by the WorktreeCreate/WorktreeRemove hooks
+  // (packages/cli/src/hooks/handlers.ts). Those hooks only ever observe a filesystem path, with
+  // no swarmId/taskId in their payload, so a created workspace is associated with whichever swarm
+  // is most recently active at that moment (getMostRecentActiveSwarm) rather than a specific task
+  // - a reasonable heuristic given v0 runs one swarm at a time against a given workspace in
+  // practice, but not a guaranteed-correct correlation. If no swarm is active, the hook has
+  // nothing to associate the path with and the workspace row is simply not created.
+  createWorkspace(input: {
+    swarmId: string;
+    kind: WorkspaceKind;
+    name: string;
+    path: string;
+    branch?: string | null;
+  }): Promise<WorkspaceRecord> {
+    return this.deps.workspaces.create(input);
+  }
+
+  async removeWorkspaceByPath(path: string): Promise<void> {
+    const existing = this.deps.workspaces.findActiveByPath(path);
+    if (existing) await this.deps.workspaces.markRemoved(existing.id);
   }
 
   async workspaceReserve(input: {

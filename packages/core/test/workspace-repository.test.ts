@@ -61,4 +61,26 @@ describe('WorkspaceRepository', () => {
     expect(workspaces.get(b.id)!.removedAt).not.toBeNull();
     state.close();
   });
+
+  it('findActiveByPath returns the newest non-removed workspace at that path, or null once all are removed', async () => {
+    const { state, workspaces, swarmId } = await setup();
+    expect(workspaces.findActiveByPath('/repo/.worktrees/wt')).toBeNull();
+    const first = await workspaces.create({
+      swarmId,
+      kind: 'worktree',
+      name: 'wt',
+      path: '/repo/.worktrees/wt',
+    });
+    expect(workspaces.findActiveByPath('/repo/.worktrees/wt')?.id).toBe(first.id);
+    await workspaces.markRemoved(first.id);
+    expect(workspaces.findActiveByPath('/repo/.worktrees/wt')).toBeNull();
+    const second = await workspaces.create({
+      swarmId,
+      kind: 'worktree',
+      name: 'wt',
+      path: '/repo/.worktrees/wt',
+    });
+    expect(workspaces.findActiveByPath('/repo/.worktrees/wt')?.id).toBe(second.id);
+    state.close();
+  });
 });
