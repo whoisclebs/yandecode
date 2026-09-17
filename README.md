@@ -253,5 +253,3 @@ Project Link: [https://github.com/whoisclebs/yandecode](https://github.com/whois
 [TypeScript-url]: https://www.typescriptlang.org/
 [Node-shield]: https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white
 [Node-url]: https://nodejs.org/
-
-</content>
