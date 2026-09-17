@@ -43,3 +43,11 @@ export { EventLog } from './events/event-log.js';
 export { blobToVector, vectorToBlob } from './persistence/vectors.js';
 export { splitIdentifier, toFtsQuery } from './persistence/fts-query.js';
 export { DocumentRepository, type ChunkInput, type ChunkRecord, type DocumentInput } from './persistence/repositories/documents.js';
+export { SwarmRepository, type CreateSwarmInput, type SwarmRecord, type SwarmStatus, type SwarmStrategy } from './persistence/repositories/swarms.js';
+export {
+  TaskRepository,
+  VALID_TASK_TRANSITIONS,
+  type CreateTaskInput,
+  type TaskRecord,
+  type TaskStatus,
+} from './persistence/repositories/tasks.js';
