@@ -111,9 +111,20 @@ export async function handleHook(
       if (task && (task.status === 'claimed' || task.status === 'running')) {
         const to = task.status === 'claimed' ? 'cancelled' : 'failed';
         await swarmRt.swarmService.taskUpdate(task.id, to, {
-          resultJson: JSON.stringify({ STATUS: to, SUMMARY: 'agent stopped without completing (SubagentStop)', EVIDENCE: [], FILES_TOUCHED: [], TESTS: [], RISKS: [], FOLLOW_UP: [] }),
+          resultJson: JSON.stringify({
+            STATUS: to,
+            SUMMARY: 'agent stopped without completing (SubagentStop)',
+            EVIDENCE: [],
+            FILES_TOUCHED: [],
+            TESTS: [],
+            RISKS: [],
+            FOLLOW_UP: [],
+          }),
         });
-        await rt.events.emit({ event: 'task_orphaned', data: { taskId: task.id, reason: 'subagent_stop' } });
+        await rt.events.emit({
+          event: 'task_orphaned',
+          data: { taskId: task.id, reason: 'subagent_stop' },
+        });
       }
     }
     return { stdout: '' };
@@ -122,7 +133,10 @@ export async function handleHook(
   if (event === 'WorktreeCreate' || event === 'WorktreeRemove') {
     const worktreePath = extractWorktreePath(input);
     if (worktreePath) {
-      await rt.events.emit({ event: event === 'WorktreeCreate' ? 'worktree_created' : 'worktree_removed', data: { path: worktreePath } });
+      await rt.events.emit({
+        event: event === 'WorktreeCreate' ? 'worktree_created' : 'worktree_removed',
+        data: { path: worktreePath },
+      });
     }
     return { stdout: '' };
   }

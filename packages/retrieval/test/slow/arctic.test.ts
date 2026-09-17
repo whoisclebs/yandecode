@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { ArcticEmbedXsProvider, modelIsCached, resolveModelCacheDir } from '../../src/embeddings/arctic.js';
+import {
+  ArcticEmbedXsProvider,
+  modelIsCached,
+  resolveModelCacheDir,
+} from '../../src/embeddings/arctic.js';
 
-const dot = (a: Float32Array, b: Float32Array): number => a.reduce((s, x, i) => s + x * (b[i] ?? 0), 0);
+const dot = (a: Float32Array, b: Float32Array): number =>
+  a.reduce((s, x, i) => s + x * (b[i] ?? 0), 0);
 
 describe('ArcticEmbedXsProvider (downloads the model once)', () => {
   it('embeds 384-d normalized vectors with CLS pooling and ranks relevant code higher', async () => {

@@ -2,7 +2,12 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { LeaseRepository, SwarmRepository, TaskRepository, WorkspaceRepository } from '@yandecode/core';
+import {
+  LeaseRepository,
+  SwarmRepository,
+  TaskRepository,
+  WorkspaceRepository,
+} from '@yandecode/core';
 import { SwarmService } from '@yandecode/swarm';
 import { openRuntime } from '../src/context.js';
 import { handleHook, runHookCommand } from '../src/hooks/handlers.js';
@@ -129,8 +134,15 @@ describe('handleHook: SubagentStop, WorktreeCreate/Remove, SessionEnd swarm clea
     writeFileSync(join(dir, 'yandecode.json'), '{}');
     const rt = openRuntime(dir);
     const service = swarmService(rt);
-    const swarm = await service.createSwarm({ title: 't', goal: 'g', strategy: 'adaptive', sessionId: null });
-    const [task] = await service.taskCreate(swarm.id, [{ ref: 'a', title: 'a', description: 'd', role: 'implementer', paths: ['src/x/**'] }]);
+    const swarm = await service.createSwarm({
+      title: 't',
+      goal: 'g',
+      strategy: 'adaptive',
+      sessionId: null,
+    });
+    const [task] = await service.taskCreate(swarm.id, [
+      { ref: 'a', title: 'a', description: 'd', role: 'implementer', paths: ['src/x/**'] },
+    ]);
     await service.taskUpdate(task!.id, 'ready');
     await service.taskUpdate(task!.id, 'claimed');
     await service.taskUpdate(task!.id, 'running', { ownerAgent: task!.id });
@@ -141,8 +153,15 @@ describe('handleHook: SubagentStop, WorktreeCreate/Remove, SessionEnd swarm clea
     expect(after.status).toBe('failed');
 
     // Leases were released: a second task can now claim the same path.
-    const [other] = await service.taskCreate(swarm.id, [{ ref: 'b', title: 'b', description: 'd', role: 'implementer', paths: ['src/x/**'] }]);
-    const reserve = await service.workspaceReserve({ swarmId: swarm.id, taskId: other!.id, patterns: ['src/x/**'], holderAgent: 'x' });
+    const [other] = await service.taskCreate(swarm.id, [
+      { ref: 'b', title: 'b', description: 'd', role: 'implementer', paths: ['src/x/**'] },
+    ]);
+    const reserve = await service.workspaceReserve({
+      swarmId: swarm.id,
+      taskId: other!.id,
+      patterns: ['src/x/**'],
+      holderAgent: 'x',
+    });
     expect(reserve.granted).toBe(true);
     rt.close();
   });
@@ -152,8 +171,15 @@ describe('handleHook: SubagentStop, WorktreeCreate/Remove, SessionEnd swarm clea
     writeFileSync(join(dir, 'yandecode.json'), '{}');
     const rt = openRuntime(dir);
     const service = swarmService(rt);
-    const swarm = await service.createSwarm({ title: 't', goal: 'g', strategy: 'adaptive', sessionId: null });
-    const [task] = await service.taskCreate(swarm.id, [{ ref: 'a', title: 'a', description: 'd', role: 'implementer' }]);
+    const swarm = await service.createSwarm({
+      title: 't',
+      goal: 'g',
+      strategy: 'adaptive',
+      sessionId: null,
+    });
+    const [task] = await service.taskCreate(swarm.id, [
+      { ref: 'a', title: 'a', description: 'd', role: 'implementer' },
+    ]);
     await service.taskUpdate(task!.id, 'ready');
     await service.taskUpdate(task!.id, 'claimed');
 
@@ -169,7 +195,9 @@ describe('handleHook: SubagentStop, WorktreeCreate/Remove, SessionEnd swarm clea
     writeFileSync(join(dir, 'yandecode.json'), '{}');
     const rt = openRuntime(dir);
     await expect(handleHook('SubagentStop', {}, rt)).resolves.toEqual({ stdout: '' });
-    await expect(handleHook('SubagentStop', { agent_id: 'no-such-task' }, rt)).resolves.toEqual({ stdout: '' });
+    await expect(handleHook('SubagentStop', { agent_id: 'no-such-task' }, rt)).resolves.toEqual({
+      stdout: '',
+    });
     rt.close();
   });
 
@@ -177,7 +205,9 @@ describe('handleHook: SubagentStop, WorktreeCreate/Remove, SessionEnd swarm clea
     const dir = mkdtempSync(join(tmpdir(), 'yc-hook-worktree-'));
     writeFileSync(join(dir, 'yandecode.json'), '{}');
     const rt = openRuntime(dir);
-    await expect(handleHook('WorktreeCreate', { worktree_path: '/tmp/wt-1' }, rt)).resolves.toEqual({ stdout: '' });
+    await expect(handleHook('WorktreeCreate', { worktree_path: '/tmp/wt-1' }, rt)).resolves.toEqual(
+      { stdout: '' },
+    );
     await expect(handleHook('WorktreeRemove', {}, rt)).resolves.toEqual({ stdout: '' });
     rt.close();
   });
@@ -188,9 +218,21 @@ describe('handleHook: SubagentStop, WorktreeCreate/Remove, SessionEnd swarm clea
     const rt = openRuntime(dir);
     const service = swarmService(rt);
     await handleHook('SessionStart', { session_id: 'claude-1', source: 'startup' }, rt);
-    const swarm = await service.createSwarm({ title: 't', goal: 'g', strategy: 'adaptive', sessionId: 'claude-1' });
-    const otherSessionSwarm = await service.createSwarm({ title: 'other', goal: 'g', strategy: 'adaptive', sessionId: 'claude-2' });
-    const [task] = await service.taskCreate(swarm.id, [{ ref: 'a', title: 'a', description: 'd', role: 'implementer' }]);
+    const swarm = await service.createSwarm({
+      title: 't',
+      goal: 'g',
+      strategy: 'adaptive',
+      sessionId: 'claude-1',
+    });
+    const otherSessionSwarm = await service.createSwarm({
+      title: 'other',
+      goal: 'g',
+      strategy: 'adaptive',
+      sessionId: 'claude-2',
+    });
+    const [task] = await service.taskCreate(swarm.id, [
+      { ref: 'a', title: 'a', description: 'd', role: 'implementer' },
+    ]);
 
     await handleHook('SessionEnd', { session_id: 'claude-1', reason: 'exit' }, rt);
 

@@ -125,9 +125,22 @@ describe('runDoctor', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'yc-doc-outofsync-'));
     await runInit(cwd, { launcher: { command: 'yandecode', args: [] } });
     const rt = openRuntime(cwd);
-    await rt.index.setMeta({ name: 'repository', generation: 3, dimensions: 384, modelId: 'x', vectorCount: 5, builtAt: '2026-01-01T00:00:00.000Z', filePath: join(cwd, 'nowhere.usearch') });
+    await rt.index.setMeta({
+      name: 'repository',
+      generation: 3,
+      dimensions: 384,
+      modelId: 'x',
+      vectorCount: 5,
+      builtAt: '2026-01-01T00:00:00.000Z',
+      filePath: join(cwd, 'nowhere.usearch'),
+    });
     rt.close();
-    const results = runDoctor({ cwd, probeVersion: probeAllOk, nodeVersion: 'v22.22.3', yandecodeVersion: '0.1.0' });
+    const results = runDoctor({
+      cwd,
+      probeVersion: probeAllOk,
+      nodeVersion: 'v22.22.3',
+      yandecodeVersion: '0.1.0',
+    });
     expect(byName(results, 'Repository index').status).toBe('fail');
     expect(byName(results, 'Repository index').detail).toContain('VECTOR INDEX OUT OF SYNC');
     expect(byName(results, 'Repository index').fix).toBe('yandecode index --rebuild-vectors');

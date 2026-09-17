@@ -27,9 +27,14 @@ export class JwtValidator {
     if (parts.length !== 3) throw new JwtValidationError('malformed token');
     const [headerPart, payloadPart, signaturePart] = parts as [string, string, string];
 
-    const expectedSignature = createHmac('sha256', this.config.ssoSharedSecret).update(`${headerPart}.${payloadPart}`).digest();
+    const expectedSignature = createHmac('sha256', this.config.ssoSharedSecret)
+      .update(`${headerPart}.${payloadPart}`)
+      .digest();
     const actualSignature = base64UrlDecode(signaturePart);
-    if (expectedSignature.length !== actualSignature.length || !timingSafeEqual(expectedSignature, actualSignature)) {
+    if (
+      expectedSignature.length !== actualSignature.length ||
+      !timingSafeEqual(expectedSignature, actualSignature)
+    ) {
       throw new JwtValidationError('signature mismatch');
     }
 

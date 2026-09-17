@@ -3,14 +3,33 @@ import { DocumentRepository, type ChunkInput } from '../src/persistence/reposito
 import { StateService } from '../src/persistence/state-service.js';
 
 const chunk = (over: Partial<ChunkInput>): ChunkInput => ({
-  kind: 'function', symbol: null, identifiers: '', startLine: 1, endLine: 3, content: 'x', contentHash: 'h', tokenCount: 1, embedding: null, ...over,
+  kind: 'function',
+  symbol: null,
+  identifiers: '',
+  startLine: 1,
+  endLine: 3,
+  content: 'x',
+  contentHash: 'h',
+  tokenCount: 1,
+  embedding: null,
+  ...over,
 });
-const doc = (path: string, hash = 'dh') => ({ path, language: 'typescript', sizeBytes: 10, contentHash: hash, gitCommit: null, indexGeneration: 1 });
+const doc = (path: string, hash = 'dh') => ({
+  path,
+  language: 'typescript',
+  sizeBytes: 10,
+  contentHash: hash,
+  gitCommit: null,
+  indexGeneration: 1,
+});
 
 describe('DocumentRepository', () => {
   it('inserts documents with monotonically allocated vector ids', async () => {
     const repo = new DocumentRepository(StateService.open(':memory:'));
-    const a = await repo.replaceDocument(doc('a.ts'), [chunk({ content: 'one' }), chunk({ content: 'two' })]);
+    const a = await repo.replaceDocument(doc('a.ts'), [
+      chunk({ content: 'one' }),
+      chunk({ content: 'two' }),
+    ]);
     const b = await repo.replaceDocument(doc('b.ts'), [chunk({ content: 'three' })]);
     expect(a.inserted.map((c) => c.vectorId)).toEqual([1, 2]);
     expect(b.inserted.map((c) => c.vectorId)).toEqual([3]);
@@ -39,7 +58,11 @@ describe('DocumentRepository', () => {
 
   it('stores and returns embeddings, and iterates them', async () => {
     const repo = new DocumentRepository(StateService.open(':memory:'));
-    await repo.replaceDocument(doc('a.ts'), [chunk({ embedding: new Float32Array([1, 0]) }), chunk({ embedding: new Float32Array([0, 1]) }), chunk({})]);
+    await repo.replaceDocument(doc('a.ts'), [
+      chunk({ embedding: new Float32Array([1, 0]) }),
+      chunk({ embedding: new Float32Array([0, 1]) }),
+      chunk({}),
+    ]);
     const map = repo.embeddingsByVectorIds([2, 1, 3]);
     expect(Array.from(map.get(1)!)).toEqual([1, 0]);
     expect(Array.from(map.get(2)!)).toEqual([0, 1]);
@@ -58,7 +81,11 @@ describe('DocumentRepository', () => {
   it('searchLexical ranks by BM25 across content, symbol and identifiers', async () => {
     const repo = new DocumentRepository(StateService.open(':memory:'));
     await repo.replaceDocument(doc('auth.ts'), [
-      chunk({ symbol: 'JwtValidator.validate', identifiers: 'jwt validator validate', content: 'verify signature and expiry' }),
+      chunk({
+        symbol: 'JwtValidator.validate',
+        identifiers: 'jwt validator validate',
+        content: 'verify signature and expiry',
+      }),
       chunk({ symbol: 'renderButton', identifiers: 'render button', content: 'return <button/>' }),
     ]);
     const hits = repo.searchLexical('jwt validator', 10);

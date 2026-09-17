@@ -20,7 +20,11 @@ export function listGenerations(dir: string, name: 'repository' | 'memory'): num
   return generations.sort((a, b) => a - b);
 }
 
-export function removeOtherGenerations(dir: string, name: 'repository' | 'memory', keep: number): void {
+export function removeOtherGenerations(
+  dir: string,
+  name: 'repository' | 'memory',
+  keep: number,
+): void {
   for (const generation of listGenerations(dir, name)) {
     if (generation === keep) continue;
     unlinkSync(join(dir, generationFileName(name, generation)));

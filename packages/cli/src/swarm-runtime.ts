@@ -1,6 +1,14 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { LeaseRepository, MemoryRepository, MessageRepository, SwarmRepository, TaskRepository, WorkspaceRepository, nowIso } from '@yandecode/core';
+import {
+  LeaseRepository,
+  MemoryRepository,
+  MessageRepository,
+  SwarmRepository,
+  TaskRepository,
+  WorkspaceRepository,
+  nowIso,
+} from '@yandecode/core';
 import {
   ArcticEmbedXsProvider,
   generationFileName,
@@ -41,11 +49,24 @@ export function createSwarmRuntime(rt: RuntimeContext): SwarmRuntime {
   if (meta?.filePath) {
     index.load();
   } else {
-    void rt.index.setMeta({ name: 'memory', generation: 1, dimensions: provider.dimensions, modelId: provider.modelId, vectorCount: 0, builtAt: nowIso(), filePath: file });
+    void rt.index.setMeta({
+      name: 'memory',
+      generation: 1,
+      dimensions: provider.dimensions,
+      modelId: provider.modelId,
+      vectorCount: 0,
+      builtAt: nowIso(),
+      filePath: file,
+    });
   }
 
   const memoryService = new MemoryService({ memories, provider, index });
   const memoryRetriever = new MemoryRetriever({ memories, provider, index });
 
-  return { swarmService, messages: new MessageRepository(rt.state), memoryService, memoryRetriever };
+  return {
+    swarmService,
+    messages: new MessageRepository(rt.state),
+    memoryService,
+    memoryRetriever,
+  };
 }

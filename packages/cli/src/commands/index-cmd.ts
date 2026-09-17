@@ -14,7 +14,10 @@ registerCommand((program) => {
     .command('index')
     .description('Build or update the local RAG index for this repository')
     .option('--full', 'reprocess every file from scratch, bumping the index generation')
-    .option('--rebuild-vectors', 'rebuild the vector index from stored embeddings without re-embedding')
+    .option(
+      '--rebuild-vectors',
+      'rebuild the vector index from stored embeddings without re-embedding',
+    )
     .option('--status', 'print index status and exit without indexing')
     .action(async (options: { full?: boolean; rebuildVectors?: boolean; status?: boolean }) => {
       const rt = openRuntime(process.cwd());
@@ -24,11 +27,17 @@ registerCommand((program) => {
           printStatus(retrieval.indexing.status());
           return;
         }
-        const mode: IndexMode = options.rebuildVectors ? 'rebuild-vectors' : options.full ? 'full' : 'incremental';
+        const mode: IndexMode = options.rebuildVectors
+          ? 'rebuild-vectors'
+          : options.full
+            ? 'full'
+            : 'incremental';
         const report = await retrieval.indexing.run({
           mode,
           onProgress: (p) => {
-            process.stdout.write(`\r${p.phase.padEnd(8)} ${p.done}/${p.total}${p.path ? ` ${p.path}` : ''}${' '.repeat(20)}`);
+            process.stdout.write(
+              `\r${p.phase.padEnd(8)} ${p.done}/${p.total}${p.path ? ` ${p.path}` : ''}${' '.repeat(20)}`,
+            );
           },
         });
         process.stdout.write('\n');
@@ -37,7 +46,9 @@ registerCommand((program) => {
         );
         const status = retrieval.indexing.status();
         if (!status.inSync) {
-          process.stderr.write('index is out of sync after the run; try "yandecode index --rebuild-vectors"\n');
+          process.stderr.write(
+            'index is out of sync after the run; try "yandecode index --rebuild-vectors"\n',
+          );
           process.exitCode = 1;
         }
       } finally {

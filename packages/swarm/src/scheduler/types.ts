@@ -1,4 +1,13 @@
-export type SchedulerTaskStatus = 'planned' | 'ready' | 'claimed' | 'running' | 'blocked' | 'review' | 'completed' | 'failed' | 'cancelled';
+export type SchedulerTaskStatus =
+  | 'planned'
+  | 'ready'
+  | 'claimed'
+  | 'running'
+  | 'blocked'
+  | 'review'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
 
 export interface SchedulerTask {
   id: string;

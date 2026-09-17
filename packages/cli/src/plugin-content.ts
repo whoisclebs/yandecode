@@ -13,9 +13,21 @@ export const AGENT_NAMES = [
   'yandecode-researcher',
 ] as const;
 
-export const SKILL_NAMES = ['yandecode-context-rules', 'yandecode-delegation', 'yandecode-swarm-protocol', 'yandecode-worker-contract'] as const;
+export const SKILL_NAMES = [
+  'yandecode-context-rules',
+  'yandecode-delegation',
+  'yandecode-swarm-protocol',
+  'yandecode-worker-contract',
+] as const;
 
-export const HOOK_EVENTS = ['SessionStart', 'PostToolUse', 'SessionEnd', 'SubagentStop', 'WorktreeCreate', 'WorktreeRemove'] as const;
+export const HOOK_EVENTS = [
+  'SessionStart',
+  'PostToolUse',
+  'SessionEnd',
+  'SubagentStop',
+  'WorktreeCreate',
+  'WorktreeRemove',
+] as const;
 
 export interface PluginContent {
   root: string;

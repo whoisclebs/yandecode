@@ -15,8 +15,15 @@ function cosineSimilarity(a: Float32Array, b: Float32Array): number {
   return denom === 0 ? 0 : dot(a, b) / denom;
 }
 
-export function maximalMarginalRelevance<T extends MmrCandidate>(query: Float32Array, candidates: T[], limit: number, lambda = 0.7): number[] {
-  const relevance = new Map(candidates.map((c) => [c.id, c.vector ? cosineSimilarity(query, c.vector) : 0]));
+export function maximalMarginalRelevance<T extends MmrCandidate>(
+  query: Float32Array,
+  candidates: T[],
+  limit: number,
+  lambda = 0.7,
+): number[] {
+  const relevance = new Map(
+    candidates.map((c) => [c.id, c.vector ? cosineSimilarity(query, c.vector) : 0]),
+  );
   const remaining = [...candidates];
   const selected: T[] = [];
 

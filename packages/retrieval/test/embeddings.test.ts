@@ -4,7 +4,8 @@ import { HashEmbeddingProvider } from '../src/embeddings/hash-provider.js';
 import { ApproxTokenCounter } from '../src/embeddings/provider.js';
 
 const norm = (v: Float32Array): number => Math.sqrt(v.reduce((s, x) => s + x * x, 0));
-const dot = (a: Float32Array, b: Float32Array): number => a.reduce((s, x, i) => s + x * (b[i] ?? 0), 0);
+const dot = (a: Float32Array, b: Float32Array): number =>
+  a.reduce((s, x, i) => s + x * (b[i] ?? 0), 0);
 
 describe('HashEmbeddingProvider', () => {
   it('is deterministic, normalized and sized', async () => {

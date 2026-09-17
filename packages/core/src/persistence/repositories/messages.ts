@@ -28,30 +28,53 @@ interface Row {
 }
 
 function fromRow(r: Row): MessageRecord {
-  return { id: r.id, swarmId: r.swarm_id, from: r.from_agent, to: r.to_agent, type: r.type, payload: JSON.parse(r.payload_json) as unknown, readAt: r.read_at, createdAt: r.created_at };
+  return {
+    id: r.id,
+    swarmId: r.swarm_id,
+    from: r.from_agent,
+    to: r.to_agent,
+    type: r.type,
+    payload: JSON.parse(r.payload_json) as unknown,
+    readAt: r.read_at,
+    createdAt: r.created_at,
+  };
 }
 
 export class MessageRepository {
   constructor(private readonly state: StateService) {}
 
-  send(input: { swarmId: string; from: string; to: string; type: MessageType; payload: unknown }): Promise<MessageRecord> {
+  send(input: {
+    swarmId: string;
+    from: string;
+    to: string;
+    type: MessageType;
+    payload: unknown;
+  }): Promise<MessageRecord> {
     const payloadJson = JSON.stringify(input.payload);
     if (Buffer.byteLength(payloadJson, 'utf8') > MESSAGE_PAYLOAD_MAX_BYTES) {
-      return Promise.reject(new YandeCodeError('MESSAGE_PAYLOAD_TOO_LARGE', `message payload exceeds ${MESSAGE_PAYLOAD_MAX_BYTES} bytes`));
+      return Promise.reject(
+        new YandeCodeError(
+          'MESSAGE_PAYLOAD_TOO_LARGE',
+          `message payload exceeds ${MESSAGE_PAYLOAD_MAX_BYTES} bytes`,
+        ),
+      );
     }
     return this.state.write((db) => {
       const id = newId();
       const now = nowIso();
-      db.prepare('INSERT INTO messages (id, swarm_id, from_agent, to_agent, type, payload_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+      db.prepare(
+        'INSERT INTO messages (id, swarm_id, from_agent, to_agent, type, payload_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      ).run(id, input.swarmId, input.from, input.to, input.type, payloadJson, now);
+      return {
         id,
-        input.swarmId,
-        input.from,
-        input.to,
-        input.type,
-        payloadJson,
-        now,
-      );
-      return { id, swarmId: input.swarmId, from: input.from, to: input.to, type: input.type, payload: input.payload, readAt: null, createdAt: now };
+        swarmId: input.swarmId,
+        from: input.from,
+        to: input.to,
+        type: input.type,
+        payload: input.payload,
+        readAt: null,
+        createdAt: now,
+      };
     });
   }
 
@@ -63,13 +86,19 @@ export class MessageRepository {
 
   listUnreadFor(swarmId: string, toAgent: string): MessageRecord[] {
     const rows = this.state.read((db) =>
-      db.prepare('SELECT * FROM messages WHERE swarm_id = ? AND to_agent = ? AND read_at IS NULL ORDER BY created_at').all(swarmId, toAgent),
+      db
+        .prepare(
+          'SELECT * FROM messages WHERE swarm_id = ? AND to_agent = ? AND read_at IS NULL ORDER BY created_at',
+        )
+        .all(swarmId, toAgent),
     ) as Row[];
     return rows.map(fromRow);
   }
 
   listBySwarm(swarmId: string): MessageRecord[] {
-    const rows = this.state.read((db) => db.prepare('SELECT * FROM messages WHERE swarm_id = ? ORDER BY created_at').all(swarmId)) as Row[];
+    const rows = this.state.read((db) =>
+      db.prepare('SELECT * FROM messages WHERE swarm_id = ? ORDER BY created_at').all(swarmId),
+    ) as Row[];
     return rows.map(fromRow);
   }
 }

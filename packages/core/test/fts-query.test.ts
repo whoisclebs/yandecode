@@ -3,7 +3,9 @@ import { toFtsQuery } from '../src/persistence/fts-query.js';
 
 describe('toFtsQuery', () => {
   it('quotes tokens, splits camelCase and dedupes', () => {
-    expect(toFtsQuery('where is JwtValidator validate?')).toBe('"where" OR "is" OR "jwtvalidator" OR "jwt" OR "validator" OR "validate"');
+    expect(toFtsQuery('where is JwtValidator validate?')).toBe(
+      '"where" OR "is" OR "jwtvalidator" OR "jwt" OR "validator" OR "validate"',
+    );
   });
   it('drops operators and single characters', () => {
     expect(toFtsQuery('a OR b NEAR(x) "quoted" *')).toBe('"or" OR "near" OR "quoted"');

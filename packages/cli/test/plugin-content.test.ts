@@ -99,8 +99,18 @@ describe('plugin content', () => {
 describe('swarm-aware agent prompts', () => {
   it('the dispatcher references the real swarm and memory MCP tools by name', () => {
     const content = loadPluginContent();
-    const dispatcher = readFileSync(content.agents.find((a) => a.name === 'yandecode-dispatcher')!.file, 'utf8');
-    for (const tool of ['swarm_create', 'task_create', 'swarm_next', 'swarm_status', 'memory_search', 'memory_store']) {
+    const dispatcher = readFileSync(
+      content.agents.find((a) => a.name === 'yandecode-dispatcher')!.file,
+      'utf8',
+    );
+    for (const tool of [
+      'swarm_create',
+      'task_create',
+      'swarm_next',
+      'swarm_status',
+      'memory_search',
+      'memory_store',
+    ]) {
       expect(dispatcher).toContain(tool);
     }
   });
@@ -117,9 +127,18 @@ describe('swarm-aware agent prompts', () => {
 
   it('the four read-only agents gain memory/message/task-update tools in their frontmatter tool list', () => {
     const content = loadPluginContent();
-    for (const name of ['yandecode-scout', 'yandecode-reviewer', 'yandecode-security', 'yandecode-researcher']) {
+    for (const name of [
+      'yandecode-scout',
+      'yandecode-reviewer',
+      'yandecode-security',
+      'yandecode-researcher',
+    ]) {
       const body = readFileSync(content.agents.find((a) => a.name === name)!.file, 'utf8');
-      for (const tool of ['mcp__yandecode__memory_search', 'mcp__yandecode__task_update', 'mcp__yandecode__message_send']) {
+      for (const tool of [
+        'mcp__yandecode__memory_search',
+        'mcp__yandecode__task_update',
+        'mcp__yandecode__message_send',
+      ]) {
         expect(body).toContain(tool);
       }
     }

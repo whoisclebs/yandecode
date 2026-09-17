@@ -1,7 +1,13 @@
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { DocumentRepository, EventLog, EventRepository, IndexRepository, StateService } from '@yandecode/core';
+import {
+  DocumentRepository,
+  EventLog,
+  EventRepository,
+  IndexRepository,
+  StateService,
+} from '@yandecode/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LineChunker } from '../src/chunking/line-chunker.js';
 import { HashEmbeddingProvider } from '../src/embeddings/hash-provider.js';
@@ -32,8 +38,14 @@ beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'yc-indexing-'));
   indexesDir = join(root, '.yandecode', 'indexes');
   state = StateService.open(':memory:');
-  writeFileSync(join(root, 'a.ts'), 'export function add(a: number, b: number): number {\n  return a + b;\n}\n');
-  writeFileSync(join(root, 'b.ts'), 'export function sub(a: number, b: number): number {\n  return a - b;\n}\n');
+  writeFileSync(
+    join(root, 'a.ts'),
+    'export function add(a: number, b: number): number {\n  return a + b;\n}\n',
+  );
+  writeFileSync(
+    join(root, 'b.ts'),
+    'export function sub(a: number, b: number): number {\n  return a - b;\n}\n',
+  );
   service = makeService();
 });
 
@@ -61,13 +73,22 @@ describe('IndexingService', () => {
   it('re-indexes only a modified file and assigns it new vector ids', async () => {
     await service.run({ mode: 'incremental' });
     const documents = new DocumentRepository(state);
-    const beforeIds = documents.chunksByVectorIds(documents.allVectorIds()).filter((c) => c.path === 'a.ts').map((c) => c.vectorId);
+    const beforeIds = documents
+      .chunksByVectorIds(documents.allVectorIds())
+      .filter((c) => c.path === 'a.ts')
+      .map((c) => c.vectorId);
 
-    writeFileSync(join(root, 'a.ts'), 'export function add(a: number, b: number): number {\n  return a + b + 0;\n}\n');
+    writeFileSync(
+      join(root, 'a.ts'),
+      'export function add(a: number, b: number): number {\n  return a + b + 0;\n}\n',
+    );
     const report = await service.run({ mode: 'incremental' });
     expect(report).toMatchObject({ added: 0, changed: 1, removed: 0 });
 
-    const afterIds = documents.chunksByVectorIds(documents.allVectorIds()).filter((c) => c.path === 'a.ts').map((c) => c.vectorId);
+    const afterIds = documents
+      .chunksByVectorIds(documents.allVectorIds())
+      .filter((c) => c.path === 'a.ts')
+      .map((c) => c.vectorId);
     for (const id of afterIds) expect(beforeIds).not.toContain(id);
   });
 
@@ -106,7 +127,9 @@ describe('IndexingService', () => {
         throw new Error('simulated native load failure');
       },
     });
-    await expect(crashingService.run({ mode: 'rebuild-vectors' })).rejects.toThrow('simulated native load failure');
+    await expect(crashingService.run({ mode: 'rebuild-vectors' })).rejects.toThrow(
+      'simulated native load failure',
+    );
     const after = service.status();
     expect(after.generation).toBe(before.generation);
     expect(after.vectorFile).toBe(before.vectorFile);

@@ -33,7 +33,9 @@ registerCommand((program) => {
       };
       const note = (): string | null => {
         const dirty = rt.index.listDirty().length;
-        return dirty > AUTO_REINDEX_MAX_DIRTY ? `NOTE: ${dirty} files changed since the last index; run "yandecode index".` : null;
+        return dirty > AUTO_REINDEX_MAX_DIRTY
+          ? `NOTE: ${dirty} files changed since the last index; run "yandecode index".`
+          : null;
       };
       const swarmRt = createSwarmRuntime(rt);
       const server = createMcpServer({

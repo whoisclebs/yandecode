@@ -42,8 +42,19 @@ export {
 export { EventLog } from './events/event-log.js';
 export { blobToVector, vectorToBlob } from './persistence/vectors.js';
 export { splitIdentifier, toFtsQuery } from './persistence/fts-query.js';
-export { DocumentRepository, type ChunkInput, type ChunkRecord, type DocumentInput } from './persistence/repositories/documents.js';
-export { SwarmRepository, type CreateSwarmInput, type SwarmRecord, type SwarmStatus, type SwarmStrategy } from './persistence/repositories/swarms.js';
+export {
+  DocumentRepository,
+  type ChunkInput,
+  type ChunkRecord,
+  type DocumentInput,
+} from './persistence/repositories/documents.js';
+export {
+  SwarmRepository,
+  type CreateSwarmInput,
+  type SwarmRecord,
+  type SwarmStatus,
+  type SwarmStrategy,
+} from './persistence/repositories/swarms.js';
 export {
   TaskRepository,
   VALID_TASK_TRANSITIONS,
@@ -51,7 +62,25 @@ export {
   type TaskRecord,
   type TaskStatus,
 } from './persistence/repositories/tasks.js';
-export { LeaseRepository, LEASE_TTL_MS, type LeaseRecord } from './persistence/repositories/leases.js';
-export { WorkspaceRepository, type WorkspaceKind, type WorkspaceRecord } from './persistence/repositories/workspaces.js';
-export { MessageRepository, MESSAGE_PAYLOAD_MAX_BYTES, type MessageRecord, type MessageType } from './persistence/repositories/messages.js';
-export { MemoryRepository, type MemoryInput, type MemoryRecord, type MemoryNamespace } from './persistence/repositories/memories.js';
+export {
+  LeaseRepository,
+  LEASE_TTL_MS,
+  type LeaseRecord,
+} from './persistence/repositories/leases.js';
+export {
+  WorkspaceRepository,
+  type WorkspaceKind,
+  type WorkspaceRecord,
+} from './persistence/repositories/workspaces.js';
+export {
+  MessageRepository,
+  MESSAGE_PAYLOAD_MAX_BYTES,
+  type MessageRecord,
+  type MessageType,
+} from './persistence/repositories/messages.js';
+export {
+  MemoryRepository,
+  type MemoryInput,
+  type MemoryRecord,
+  type MemoryNamespace,
+} from './persistence/repositories/memories.js';

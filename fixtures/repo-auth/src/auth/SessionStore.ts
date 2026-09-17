@@ -19,7 +19,12 @@ export class SessionStore {
 
   create(userId: string, now: number = Date.now()): Session {
     const token = randomBytes(32).toString('hex');
-    const session: Session = { token, userId, createdAt: now, expiresAt: now + this.config.sessionTtlSeconds * 1000 };
+    const session: Session = {
+      token,
+      userId,
+      createdAt: now,
+      expiresAt: now + this.config.sessionTtlSeconds * 1000,
+    };
     this.sessions.set(token, session);
     return session;
   }

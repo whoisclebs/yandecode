@@ -21,7 +21,8 @@ export function applyBoosts<T extends BoostCandidate>(candidates: T[], query: st
       .split(/\s+/)
       .filter((t) => t.length > 0),
   );
-  const wantsTest = tokens.has('test') || tokens.has('tests') || tokens.has('spec') || tokens.has('specs');
+  const wantsTest =
+    tokens.has('test') || tokens.has('tests') || tokens.has('spec') || tokens.has('specs');
   return candidates.map((c) => {
     let boosted = c.score;
     if (c.symbol && tokens.has(lastSegment(c.symbol))) boosted += SYMBOL_BOOST;

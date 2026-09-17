@@ -2,8 +2,21 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync }
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DocumentRepository, EventLog, EventRepository, IndexRepository, StateService } from '@yandecode/core';
-import { ArcticEmbedXsProvider, createDefaultChunker, HybridRetriever, IndexingService, resolveModelCacheDir, USearchVectorIndex } from '@yandecode/retrieval';
+import {
+  DocumentRepository,
+  EventLog,
+  EventRepository,
+  IndexRepository,
+  StateService,
+} from '@yandecode/core';
+import {
+  ArcticEmbedXsProvider,
+  createDefaultChunker,
+  HybridRetriever,
+  IndexingService,
+  resolveModelCacheDir,
+  USearchVectorIndex,
+} from '@yandecode/retrieval';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURE_ROOT = join(HERE, '../../fixtures/repo-auth');
@@ -36,8 +49,18 @@ async function main(): Promise<void> {
   const modelLoadMs = Date.now() - modelLoadStart;
 
   const chunker = createDefaultChunker(provider);
-  const openIndex = (file: string | null): USearchVectorIndex => new USearchVectorIndex({ dimensions: provider.dimensions, file });
-  const indexing = new IndexingService({ root: FIXTURE_ROOT, indexesDir, documents, indexRepo, provider, chunker, events, openIndex });
+  const openIndex = (file: string | null): USearchVectorIndex =>
+    new USearchVectorIndex({ dimensions: provider.dimensions, file });
+  const indexing = new IndexingService({
+    root: FIXTURE_ROOT,
+    indexesDir,
+    documents,
+    indexRepo,
+    provider,
+    chunker,
+    events,
+    openIndex,
+  });
 
   const fullStart = Date.now();
   const fullReport = await indexing.run({ mode: 'incremental' });

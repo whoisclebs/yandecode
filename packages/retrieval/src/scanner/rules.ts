@@ -16,7 +16,16 @@ export const DEFAULT_IGNORED_DIRS = [
   '.yandecode',
 ] as const;
 
-export const SECRET_PATTERNS = ['.env', '.env.*', '*.pem', '*.key', 'id_rsa', 'id_ed25519', 'credentials.*', 'secrets.*'] as const;
+export const SECRET_PATTERNS = [
+  '.env',
+  '.env.*',
+  '*.pem',
+  '*.key',
+  'id_rsa',
+  'id_ed25519',
+  'credentials.*',
+  'secrets.*',
+] as const;
 
 export const MAX_FILE_BYTES = 512 * 1024;
 

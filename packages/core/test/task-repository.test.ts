@@ -10,7 +10,13 @@ async function setup() {
   const state = StateService.open(join(mkdtempSync(join(tmpdir(), 'yc-tasks-')), 'state.db'));
   const swarms = new SwarmRepository(state);
   const tasks = new TaskRepository(state);
-  const swarm = await swarms.create({ title: 't', goal: 'g', strategy: 'adaptive', maxAgents: 4, sessionId: null });
+  const swarm = await swarms.create({
+    title: 't',
+    goal: 'g',
+    strategy: 'adaptive',
+    maxAgents: 4,
+    sessionId: null,
+  });
   return { state, tasks, swarmId: swarm.id };
 }
 
@@ -19,11 +25,24 @@ describe('TaskRepository', () => {
     const { state, tasks, swarmId } = await setup();
     const [scout, implementer] = await tasks.createMany([
       { swarmId, title: 'scout', description: 'explore', role: 'scout' },
-      { swarmId, title: 'implement', description: 'write code', role: 'implementer', paths: ['src/auth/**'] },
+      {
+        swarmId,
+        title: 'implement',
+        description: 'write code',
+        role: 'implementer',
+        paths: ['src/auth/**'],
+      },
     ]);
     await tasks.createMany([]); // no-op batch is valid
     const withDep = await tasks.createMany([
-      { swarmId, title: 'test', description: 'write tests', role: 'tester', dependsOn: [implementer!.id], paths: ['test/**'] },
+      {
+        swarmId,
+        title: 'test',
+        description: 'write tests',
+        role: 'tester',
+        dependsOn: [implementer!.id],
+        paths: ['test/**'],
+      },
     ]);
     expect(scout!.status).toBe('planned');
     expect(implementer!.paths).toEqual(['src/auth/**']);
@@ -34,13 +53,17 @@ describe('TaskRepository', () => {
 
   it('walks the full happy-path state machine: planned -> ready -> claimed -> running -> completed', async () => {
     const { state, tasks, swarmId } = await setup();
-    const [task] = await tasks.createMany([{ swarmId, title: 't', description: 'd', role: 'implementer' }]);
+    const [task] = await tasks.createMany([
+      { swarmId, title: 't', description: 'd', role: 'implementer' },
+    ]);
     await tasks.updateStatus(task!.id, 'ready');
     await tasks.updateStatus(task!.id, 'claimed', { ownerAgent: 'agent-a' });
     const running = await tasks.updateStatus(task!.id, 'running');
     expect(running.startedAt).not.toBeNull();
     expect(running.attempt).toBe(1);
-    const completed = await tasks.updateStatus(task!.id, 'completed', { resultJson: '{"STATUS":"ok"}' });
+    const completed = await tasks.updateStatus(task!.id, 'completed', {
+      resultJson: '{"STATUS":"ok"}',
+    });
     expect(completed.completedAt).not.toBeNull();
     expect(completed.resultJson).toBe('{"STATUS":"ok"}');
     state.close();
@@ -48,14 +71,20 @@ describe('TaskRepository', () => {
 
   it('rejects a structurally invalid transition', async () => {
     const { state, tasks, swarmId } = await setup();
-    const [task] = await tasks.createMany([{ swarmId, title: 't', description: 'd', role: 'implementer' }]);
-    await expect(tasks.updateStatus(task!.id, 'completed')).rejects.toThrow(/INVALID_TASK_TRANSITION/);
+    const [task] = await tasks.createMany([
+      { swarmId, title: 't', description: 'd', role: 'implementer' },
+    ]);
+    await expect(tasks.updateStatus(task!.id, 'completed')).rejects.toThrow(
+      /INVALID_TASK_TRANSITION/,
+    );
     state.close();
   });
 
   it('allows failed -> ready only while attempt < maxAttempts, then rejects', async () => {
     const { state, tasks, swarmId } = await setup();
-    const [task] = await tasks.createMany([{ swarmId, title: 't', description: 'd', role: 'implementer', maxAttempts: 2 }]);
+    const [task] = await tasks.createMany([
+      { swarmId, title: 't', description: 'd', role: 'implementer', maxAttempts: 2 },
+    ]);
     await tasks.updateStatus(task!.id, 'ready');
     await tasks.updateStatus(task!.id, 'claimed');
     await tasks.updateStatus(task!.id, 'running'); // attempt 1
@@ -94,7 +123,9 @@ describe('TaskRepository', () => {
       { swarmId, title: 'independent', description: 'd', role: 'scout' },
     ]);
     // withDep references upstream's real id, so it must be created in a second batch.
-    const [withDep] = await tasks.createMany([{ swarmId, title: 'depends', description: 'd', role: 'tester', dependsOn: [upstream!.id] }]);
+    const [withDep] = await tasks.createMany([
+      { swarmId, title: 'depends', description: 'd', role: 'tester', dependsOn: [upstream!.id] },
+    ]);
 
     let moved = await tasks.markReadyWhereDependenciesComplete(swarmId);
     expect(moved.sort()).toEqual([upstream!.id, independent!.id].sort());

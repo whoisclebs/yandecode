@@ -27,7 +27,9 @@ export class Router {
   }
 
   async dispatch(request: HttpRequest): Promise<HttpResponse> {
-    const route = this.routes.find((r) => r.method === request.method.toUpperCase() && r.path === request.path);
+    const route = this.routes.find(
+      (r) => r.method === request.method.toUpperCase() && r.path === request.path,
+    );
     if (!route) return { status: 404, body: { error: 'not found' } };
     return route.handler(request);
   }

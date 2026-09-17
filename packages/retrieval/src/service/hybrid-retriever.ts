@@ -70,14 +70,21 @@ export class HybridRetriever {
         const chunk = byVectorId.get(f.id);
         return chunk ? { id: f.id, score: f.score, symbol: chunk.symbol, path: chunk.path } : null;
       })
-      .filter((c): c is { id: number; score: number; symbol: string | null; path: string } => c !== null);
+      .filter(
+        (c): c is { id: number; score: number; symbol: string | null; path: string } => c !== null,
+      );
 
     const boosted = applyBoosts(withChunks, query);
     const embeddings = this.deps.documents.embeddingsByVectorIds(boosted.map((c) => c.id));
     const withVectors = boosted.map((c) => ({ ...c, vector: embeddings.get(c.id) ?? null }));
 
     const limit = Math.min(options.limit, this.constants.maxResults);
-    const selectedIds = maximalMarginalRelevance(queryVector, withVectors, limit, this.constants.mmrLambda);
+    const selectedIds = maximalMarginalRelevance(
+      queryVector,
+      withVectors,
+      limit,
+      this.constants.mmrLambda,
+    );
     const scoreById = new Map(boosted.map((c) => [c.id, c.score]));
 
     const hits: RagHit[] = [];

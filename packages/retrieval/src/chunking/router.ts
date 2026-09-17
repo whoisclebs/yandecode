@@ -24,7 +24,14 @@ export class ChunkerRouter implements Chunker {
   }
 }
 
-export function createDefaultChunker(counter: TokenCounter, limits: ChunkLimits = DEFAULT_LIMITS): ChunkerRouter {
+export function createDefaultChunker(
+  counter: TokenCounter,
+  limits: ChunkLimits = DEFAULT_LIMITS,
+): ChunkerRouter {
   const line = new LineChunker(counter, limits);
-  return new ChunkerRouter(new TreeSitterChunker(counter, line, limits), new MarkdownChunker(counter, line, limits), line);
+  return new ChunkerRouter(
+    new TreeSitterChunker(counter, line, limits),
+    new MarkdownChunker(counter, line, limits),
+    line,
+  );
 }

@@ -3,7 +3,16 @@ import { YandeCodeError } from '../../errors.js';
 import type { Database } from '../open.js';
 import type { StateService } from '../state-service.js';
 
-export type TaskStatus = 'planned' | 'ready' | 'claimed' | 'running' | 'blocked' | 'review' | 'completed' | 'failed' | 'cancelled';
+export type TaskStatus =
+  | 'planned'
+  | 'ready'
+  | 'claimed'
+  | 'running'
+  | 'blocked'
+  | 'review'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
 
 export const VALID_TASK_TRANSITIONS: Readonly<Record<TaskStatus, readonly TaskStatus[]>> = {
   planned: ['ready', 'cancelled'],
@@ -75,8 +84,16 @@ export class TaskRepository {
   constructor(private readonly state: StateService) {}
 
   private hydrate(db: Database, row: Row): TaskRecord {
-    const dependsOn = (db.prepare('SELECT depends_on_task_id AS id FROM task_dependencies WHERE task_id = ?').all(row.id) as { id: string }[]).map((r) => r.id);
-    const paths = (db.prepare('SELECT pattern FROM task_paths WHERE task_id = ?').all(row.id) as { pattern: string }[]).map((r) => r.pattern);
+    const dependsOn = (
+      db
+        .prepare('SELECT depends_on_task_id AS id FROM task_dependencies WHERE task_id = ?')
+        .all(row.id) as { id: string }[]
+    ).map((r) => r.id);
+    const paths = (
+      db.prepare('SELECT pattern FROM task_paths WHERE task_id = ?').all(row.id) as {
+        pattern: string;
+      }[]
+    ).map((r) => r.pattern);
     return {
       id: row.id,
       swarmId: row.swarm_id,
@@ -105,17 +122,32 @@ export class TaskRepository {
       const insertTask = db.prepare(
         'INSERT INTO tasks (id, swarm_id, title, description, role, status, priority, attempt, max_attempts, needs_worktree, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)',
       );
-      const insertDep = db.prepare('INSERT INTO task_dependencies (task_id, depends_on_task_id) VALUES (?, ?)');
+      const insertDep = db.prepare(
+        'INSERT INTO task_dependencies (task_id, depends_on_task_id) VALUES (?, ?)',
+      );
       const insertPath = db.prepare('INSERT INTO task_paths (task_id, pattern) VALUES (?, ?)');
       const ids: string[] = [];
       for (const input of inputs) {
         const id = newId();
-        insertTask.run(id, input.swarmId, input.title, input.description, input.role, 'planned', input.priority ?? 0, input.maxAttempts ?? 2, input.needsWorktree ? 1 : 0, now);
+        insertTask.run(
+          id,
+          input.swarmId,
+          input.title,
+          input.description,
+          input.role,
+          'planned',
+          input.priority ?? 0,
+          input.maxAttempts ?? 2,
+          input.needsWorktree ? 1 : 0,
+          now,
+        );
         for (const dep of input.dependsOn ?? []) insertDep.run(id, dep);
         for (const pattern of input.paths ?? []) insertPath.run(id, pattern);
         ids.push(id);
       }
-      return ids.map((id) => this.hydrate(db, db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Row));
+      return ids.map((id) =>
+        this.hydrate(db, db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Row),
+      );
     });
   }
 
@@ -128,7 +160,9 @@ export class TaskRepository {
 
   listBySwarm(swarmId: string): TaskRecord[] {
     return this.state.read((db) => {
-      const rows = db.prepare('SELECT * FROM tasks WHERE swarm_id = ? ORDER BY priority DESC, id').all(swarmId) as Row[];
+      const rows = db
+        .prepare('SELECT * FROM tasks WHERE swarm_id = ? ORDER BY priority DESC, id')
+        .all(swarmId) as Row[];
       return rows.map((r) => this.hydrate(db, r));
     });
   }
@@ -137,21 +171,39 @@ export class TaskRepository {
     if (statuses.length === 0) return [];
     return this.state.read((db) => {
       const placeholders = statuses.map(() => '?').join(',');
-      const rows = db.prepare(`SELECT * FROM tasks WHERE swarm_id = ? AND status IN (${placeholders}) ORDER BY priority DESC, id`).all(swarmId, ...statuses) as Row[];
+      const rows = db
+        .prepare(
+          `SELECT * FROM tasks WHERE swarm_id = ? AND status IN (${placeholders}) ORDER BY priority DESC, id`,
+        )
+        .all(swarmId, ...statuses) as Row[];
       return rows.map((r) => this.hydrate(db, r));
     });
   }
 
-  updateStatus(id: string, to: TaskStatus, opts: { ownerAgent?: string | null; workspaceId?: string | null; resultJson?: string | null } = {}): Promise<TaskRecord> {
+  updateStatus(
+    id: string,
+    to: TaskStatus,
+    opts: {
+      ownerAgent?: string | null;
+      workspaceId?: string | null;
+      resultJson?: string | null;
+    } = {},
+  ): Promise<TaskRecord> {
     return this.state.write((db) => {
       const row = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Row | undefined;
       if (!row) throw new YandeCodeError('TASK_NOT_FOUND', `no task ${id}`);
       const from = row.status;
       if (!VALID_TASK_TRANSITIONS[from].includes(to)) {
-        throw new YandeCodeError('INVALID_TASK_TRANSITION', `task ${id}: cannot transition from ${from} to ${to}`);
+        throw new YandeCodeError(
+          'INVALID_TASK_TRANSITION',
+          `task ${id}: cannot transition from ${from} to ${to}`,
+        );
       }
       if (from === 'failed' && to === 'ready' && row.attempt >= row.max_attempts) {
-        throw new YandeCodeError('MAX_ATTEMPTS_EXCEEDED', `task ${id}: attempt ${row.attempt} >= maxAttempts ${row.max_attempts}`);
+        throw new YandeCodeError(
+          'MAX_ATTEMPTS_EXCEEDED',
+          `task ${id}: attempt ${row.attempt} >= maxAttempts ${row.max_attempts}`,
+        );
       }
       const now = nowIso();
       const attempt = to === 'running' ? row.attempt + 1 : row.attempt;
@@ -159,19 +211,33 @@ export class TaskRepository {
       const completedAt = TERMINAL_END.has(to) ? now : row.completed_at;
       db.prepare(
         'UPDATE tasks SET status = ?, attempt = ?, owner_agent = COALESCE(?, owner_agent), workspace_id = COALESCE(?, workspace_id), result_json = COALESCE(?, result_json), started_at = ?, completed_at = ? WHERE id = ?',
-      ).run(to, attempt, opts.ownerAgent ?? null, opts.workspaceId ?? null, opts.resultJson ?? null, startedAt, completedAt, id);
+      ).run(
+        to,
+        attempt,
+        opts.ownerAgent ?? null,
+        opts.workspaceId ?? null,
+        opts.resultJson ?? null,
+        startedAt,
+        completedAt,
+        id,
+      );
       return this.hydrate(db, db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Row);
     });
   }
 
   markReadyWhereDependenciesComplete(swarmId: string): Promise<string[]> {
     return this.state.write((db) => {
-      const planned = db.prepare("SELECT id FROM tasks WHERE swarm_id = ? AND status = 'planned'").all(swarmId) as { id: string }[];
+      const planned = db
+        .prepare("SELECT id FROM tasks WHERE swarm_id = ? AND status = 'planned'")
+        .all(swarmId) as { id: string }[];
       const moved: string[] = [];
       for (const { id } of planned) {
-        const deps = db.prepare('SELECT depends_on_task_id AS depId FROM task_dependencies WHERE task_id = ?').all(id) as { depId: string }[];
+        const deps = db
+          .prepare('SELECT depends_on_task_id AS depId FROM task_dependencies WHERE task_id = ?')
+          .all(id) as { depId: string }[];
         const allComplete = deps.every((d) => {
-          const dep = db.prepare('SELECT status FROM tasks WHERE id = ?').get(d.depId) as { status: TaskStatus } | undefined;
+          const dep = db.prepare('SELECT status FROM tasks WHERE id = ?').get(d.depId) as
+            { status: TaskStatus } | undefined;
           return dep?.status === 'completed';
         });
         if (allComplete) {

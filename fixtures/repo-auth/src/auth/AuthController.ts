@@ -23,7 +23,9 @@ export class AuthController {
 
   register(router: Router): void {
     router.register('POST', '/auth/login', async (req) => this.handleLogin(req.body as LoginBody));
-    router.register('POST', '/auth/sso', async (req) => this.handleSsoLogin(req.body as SsoLoginBody));
+    router.register('POST', '/auth/sso', async (req) =>
+      this.handleSsoLogin(req.body as SsoLoginBody),
+    );
     router.register('POST', '/auth/logout', async (req) => this.handleLogout(req.headers));
     router.register('GET', '/auth/me', async (req) => this.handleMe(req.headers));
   }
@@ -58,7 +60,8 @@ export class AuthController {
   }
 
   private toResponse(error: unknown): HttpResponse {
-    if (error instanceof AuthError) return { status: error.httpStatus, body: { error: error.message } };
+    if (error instanceof AuthError)
+      return { status: error.httpStatus, body: { error: error.message } };
     throw error;
   }
 }

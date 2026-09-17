@@ -46,7 +46,9 @@ describe('TreeSitterChunker', () => {
     expect(summary).toContainEqual(['function', 'helper', 19, 21]);
     expect(summary).toContainEqual(['module', null, 23, 23]);
     expect(summary).toContainEqual(['test', 'JwtValidator', 25, 27]);
-    expect(out.find((c) => c.symbol === 'JwtValidator' && c.kind === 'class')?.content).toContain('private parse(');
+    expect(out.find((c) => c.symbol === 'JwtValidator' && c.kind === 'class')?.content).toContain(
+      'private parse(',
+    );
     expect([...out].sort((a, b) => a.startLine - b.startLine)).toEqual(out);
   });
 
@@ -55,7 +57,13 @@ describe('TreeSitterChunker', () => {
     const chunker = new TreeSitterChunker(counter, new LineChunker(counter, limits), limits);
     const out = await chunker.chunk('src/jwt.ts', ts, 'typescript');
     const methods = out.filter((c) => c.kind === 'method').map((c) => c.symbol);
-    expect(methods).toEqual(expect.arrayContaining(['JwtValidator.constructor', 'JwtValidator.validate', 'JwtValidator.parse']));
+    expect(methods).toEqual(
+      expect.arrayContaining([
+        'JwtValidator.constructor',
+        'JwtValidator.validate',
+        'JwtValidator.parse',
+      ]),
+    );
     expect(out.some((c) => c.kind === 'class' && c.symbol === 'JwtValidator')).toBe(true);
   });
 
@@ -72,23 +80,45 @@ describe('TreeSitterChunker', () => {
 
   it('handles go, java and rust top-level units', async () => {
     const chunker = new TreeSitterChunker(counter, new LineChunker(counter));
-    const go = await chunker.chunk('a.go', 'package a\n\ntype S struct{}\n\nfunc (s *S) Do() {}\n\nfunc Run() {}\n', 'go');
+    const go = await chunker.chunk(
+      'a.go',
+      'package a\n\ntype S struct{}\n\nfunc (s *S) Do() {}\n\nfunc Run() {}\n',
+      'go',
+    );
     expect(go.map((c) => c.symbol)).toEqual(expect.arrayContaining(['S', 'S.Do', 'Run']));
-    const java = await chunker.chunk('A.java', 'package p;\n\npublic class A {\n  public void m() {}\n}\n', 'java');
+    const java = await chunker.chunk(
+      'A.java',
+      'package p;\n\npublic class A {\n  public void m() {}\n}\n',
+      'java',
+    );
     expect(java.map((c) => [c.kind, c.symbol])).toContainEqual(['class', 'A']);
-    const rust = await chunker.chunk('l.rs', 'struct P;\n\nimpl P {\n    fn new() -> P { P }\n}\n\npub fn go() {}\n', 'rust');
+    const rust = await chunker.chunk(
+      'l.rs',
+      'struct P;\n\nimpl P {\n    fn new() -> P { P }\n}\n\npub fn go() {}\n',
+      'rust',
+    );
     expect(rust.map((c) => c.symbol)).toEqual(expect.arrayContaining(['P', 'go']));
     expect(rust.find((c) => c.kind === 'impl')?.symbol).toBe('P');
   });
 
   it('handles javascript and tsx grammars', async () => {
     const chunker = new TreeSitterChunker(counter, new LineChunker(counter));
-    const js = await chunker.chunk('a.js', "function greet(name) {\n  return 'hi ' + name;\n}\n\nclass Greeter {\n  hello() { return greet('x'); }\n}\n", 'javascript');
-    expect(js.map((c) => [c.kind, c.symbol])).toEqual(expect.arrayContaining([
-      ['function', 'greet'],
-      ['class', 'Greeter'],
-    ]));
-    const tsx = await chunker.chunk('a.tsx', "export function Button(props: { label: string }) {\n  return <button>{props.label}</button>;\n}\n", 'tsx');
+    const js = await chunker.chunk(
+      'a.js',
+      "function greet(name) {\n  return 'hi ' + name;\n}\n\nclass Greeter {\n  hello() { return greet('x'); }\n}\n",
+      'javascript',
+    );
+    expect(js.map((c) => [c.kind, c.symbol])).toEqual(
+      expect.arrayContaining([
+        ['function', 'greet'],
+        ['class', 'Greeter'],
+      ]),
+    );
+    const tsx = await chunker.chunk(
+      'a.tsx',
+      'export function Button(props: { label: string }) {\n  return <button>{props.label}</button>;\n}\n',
+      'tsx',
+    );
     expect(tsx.map((c) => c.symbol)).toEqual(expect.arrayContaining(['Button']));
   });
 });

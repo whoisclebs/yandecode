@@ -1,7 +1,13 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { ChunkInput, DocumentRepository, EventLog, IndexName, IndexRepository } from '@yandecode/core';
+import type {
+  ChunkInput,
+  DocumentRepository,
+  EventLog,
+  IndexName,
+  IndexRepository,
+} from '@yandecode/core';
 import type { Chunker } from '../chunking/types.js';
 import type { EmbeddingProvider } from '../embeddings/provider.js';
 import { identifiersOf } from '../lexical/identifiers.js';
@@ -66,7 +72,11 @@ export class IndexingService {
     const meta = this.deps.indexRepo.getMeta(INDEX_NAME);
     const counts = this.deps.documents.counts();
     const vectorFile = meta?.filePath ?? null;
-    const inSync = meta !== null && vectorFile !== null && existsSync(vectorFile) && meta.vectorCount === counts.chunks;
+    const inSync =
+      meta !== null &&
+      vectorFile !== null &&
+      existsSync(vectorFile) &&
+      meta.vectorCount === counts.chunks;
     return {
       documents: counts.documents,
       chunks: counts.chunks,
@@ -81,27 +91,39 @@ export class IndexingService {
   async run(options: IndexRunOptions): Promise<IndexReport> {
     const start = Date.now();
     const partial =
-      options.mode === 'rebuild-vectors' ? await this.runRebuildVectors(options.onProgress) : await this.runScanBased(options.mode, options.onProgress);
+      options.mode === 'rebuild-vectors'
+        ? await this.runRebuildVectors(options.onProgress)
+        : await this.runScanBased(options.mode, options.onProgress);
     const report: IndexReport = { ...partial, durationMs: Date.now() - start };
-    await this.deps.events.emit({ event: 'index_completed', data: { mode: options.mode, ...report } });
+    await this.deps.events.emit({
+      event: 'index_completed',
+      data: { mode: options.mode, ...report },
+    });
     return report;
   }
 
   private currentGenerationAndFile(): { generation: number; file: string } {
     const meta = this.deps.indexRepo.getMeta(INDEX_NAME);
     const generation = meta?.generation ?? 1;
-    const file = meta?.filePath ?? join(this.deps.indexesDir, generationFileName(INDEX_NAME, generation));
+    const file =
+      meta?.filePath ?? join(this.deps.indexesDir, generationFileName(INDEX_NAME, generation));
     return { generation, file };
   }
 
-  private async runScanBased(mode: 'incremental' | 'full', onProgress?: (p: IndexProgress) => void): Promise<Omit<IndexReport, 'durationMs'>> {
+  private async runScanBased(
+    mode: 'incremental' | 'full',
+    onProgress?: (p: IndexProgress) => void,
+  ): Promise<Omit<IndexReport, 'durationMs'>> {
     if (mode === 'full') {
-      for (const doc of this.deps.documents.listDocuments()) await this.deps.documents.deleteDocument(doc.path);
+      for (const doc of this.deps.documents.listDocuments())
+        await this.deps.documents.deleteDocument(doc.path);
     }
 
     const scanned = await scanRepository(this.deps.root);
     onProgress?.({ phase: 'scan', done: scanned.length, total: scanned.length });
-    const existing = this.deps.documents.listDocuments().map((d) => ({ path: d.path, contentHash: d.contentHash }));
+    const existing = this.deps.documents
+      .listDocuments()
+      .map((d) => ({ path: d.path, contentHash: d.contentHash }));
     const diff = diffScan(scanned, existing);
 
     let { generation, file: indexFile } = this.currentGenerationAndFile();
@@ -151,13 +173,19 @@ export class IndexingService {
     };
   }
 
-  private async indexOneFile(file: ScannedFile, index: VectorIndex, generation: number): Promise<void> {
+  private async indexOneFile(
+    file: ScannedFile,
+    index: VectorIndex,
+    generation: number,
+  ): Promise<void> {
     const content = readFileSync(file.absPath, 'utf8');
     const chunks = await this.deps.chunker.chunk(file.relPath, content, file.language);
     const headers = chunks.map((c) => `${file.relPath} ${c.symbol ?? ''}\n${c.content}`);
     const embeddings: Float32Array[] = [];
     for (let i = 0; i < headers.length; i += EMBED_BATCH) {
-      embeddings.push(...(await this.deps.provider.embedDocuments(headers.slice(i, i + EMBED_BATCH))));
+      embeddings.push(
+        ...(await this.deps.provider.embedDocuments(headers.slice(i, i + EMBED_BATCH))),
+      );
     }
     const chunkInputs: ChunkInput[] = [];
     for (let i = 0; i < chunks.length; i += 1) {
@@ -175,7 +203,14 @@ export class IndexingService {
       });
     }
     const { inserted, removedVectorIds } = await this.deps.documents.replaceDocument(
-      { path: file.relPath, language: file.language, sizeBytes: file.sizeBytes, contentHash: file.contentHash, gitCommit: null, indexGeneration: generation },
+      {
+        path: file.relPath,
+        language: file.language,
+        sizeBytes: file.sizeBytes,
+        contentHash: file.contentHash,
+        gitCommit: null,
+        indexGeneration: generation,
+      },
       chunkInputs,
     );
     for (const id of removedVectorIds) index.remove(id);
@@ -185,7 +220,9 @@ export class IndexingService {
     }
   }
 
-  private async runRebuildVectors(onProgress?: (p: IndexProgress) => void): Promise<Omit<IndexReport, 'durationMs'>> {
+  private async runRebuildVectors(
+    onProgress?: (p: IndexProgress) => void,
+  ): Promise<Omit<IndexReport, 'durationMs'>> {
     const { generation: currentGeneration } = this.currentGenerationAndFile();
     const nextGeneration = currentGeneration + 1;
     const file = join(this.deps.indexesDir, generationFileName(INDEX_NAME, nextGeneration));
@@ -202,7 +239,8 @@ export class IndexingService {
     }
     index.rebuild(records());
     const stats = index.stats();
-    if (stats.size !== total) throw new Error(`rebuild-vectors produced ${stats.size} vectors but expected ${total}`);
+    if (stats.size !== total)
+      throw new Error(`rebuild-vectors produced ${stats.size} vectors but expected ${total}`);
 
     await this.deps.indexRepo.setMeta({
       name: INDEX_NAME,
@@ -215,6 +253,13 @@ export class IndexingService {
     });
     removeOtherGenerations(this.deps.indexesDir, INDEX_NAME, nextGeneration);
     onProgress?.({ phase: 'done', done: total, total });
-    return { added: 0, changed: 0, removed: 0, unchanged: total, chunks: total, generation: nextGeneration };
+    return {
+      added: 0,
+      changed: 0,
+      removed: 0,
+      unchanged: total,
+      chunks: total,
+      generation: nextGeneration,
+    };
   }
 }

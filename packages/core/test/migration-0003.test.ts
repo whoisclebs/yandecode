@@ -56,12 +56,22 @@ describe('migration 0003 (swarm + memory schema)', () => {
     db.prepare(
       "INSERT INTO messages (id, swarm_id, from_agent, to_agent, type, payload_json, created_at) VALUES ('m1', ?, 'a', 'b', 'finding', '{}', 'now')",
     ).run(swarmId);
-    db.prepare("INSERT INTO task_dependencies (task_id, depends_on_task_id) VALUES (?, ?)").run(taskId, taskId);
+    db.prepare('INSERT INTO task_dependencies (task_id, depends_on_task_id) VALUES (?, ?)').run(
+      taskId,
+      taskId,
+    );
     db.prepare("INSERT INTO task_paths (task_id, pattern) VALUES (?, 'src/**')").run(taskId);
 
     db.prepare('DELETE FROM swarms WHERE id = ?').run(swarmId);
 
-    for (const table of ['tasks', 'leases', 'workspaces', 'messages', 'task_dependencies', 'task_paths']) {
+    for (const table of [
+      'tasks',
+      'leases',
+      'workspaces',
+      'messages',
+      'task_dependencies',
+      'task_paths',
+    ]) {
       const row = db.prepare(`SELECT COUNT(*) AS c FROM ${table}`).get() as { c: number };
       expect(row.c, table).toBe(0);
     }
@@ -73,7 +83,9 @@ describe('migration 0003 (swarm + memory schema)', () => {
     db.prepare(
       "INSERT INTO memories (id, namespace, content, confidence, content_hash, created_at, updated_at) VALUES ('mem1', 'patterns', 'always validate input at the boundary', 0.5, 'hash1', 'now', 'now')",
     ).run();
-    let hit = db.prepare("SELECT rowid FROM memories_fts WHERE memories_fts MATCH 'validate'").all();
+    let hit = db
+      .prepare("SELECT rowid FROM memories_fts WHERE memories_fts MATCH 'validate'")
+      .all();
     expect(hit).toHaveLength(1);
 
     db.prepare("UPDATE memories SET content = 'never trust client input' WHERE id = 'mem1'").run();
@@ -102,7 +114,9 @@ describe('migration 0003 (swarm + memory schema)', () => {
     ).toThrow(/UNIQUE constraint failed/);
     expect(() =>
       db
-        .prepare("INSERT INTO memory_feedback (id, memory_id, verdict, created_at) VALUES ('f1', 'mem1', 'not-a-verdict', 'now')")
+        .prepare(
+          "INSERT INTO memory_feedback (id, memory_id, verdict, created_at) VALUES ('f1', 'mem1', 'not-a-verdict', 'now')",
+        )
         .run(),
     ).toThrow(/CHECK constraint failed/);
   });
@@ -113,7 +127,9 @@ describe('migration 0003 (swarm + memory schema)', () => {
     db.prepare(
       "INSERT INTO memories (id, namespace, content, confidence, content_hash, created_at, updated_at) VALUES ('mem1', 'patterns', 'x', 0.5, 'h1', 'now', 'now')",
     ).run();
-    db.prepare("INSERT INTO memory_feedback (id, memory_id, verdict, created_at) VALUES ('f1', 'mem1', 'helpful', 'now')").run();
+    db.prepare(
+      "INSERT INTO memory_feedback (id, memory_id, verdict, created_at) VALUES ('f1', 'mem1', 'helpful', 'now')",
+    ).run();
     db.prepare("DELETE FROM memories WHERE id = 'mem1'").run();
     const row = db.prepare('SELECT COUNT(*) AS c FROM memory_feedback').get() as { c: number };
     expect(row.c).toBe(0);

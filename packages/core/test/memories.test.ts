@@ -12,7 +12,8 @@ let repo: MemoryRepository;
 function input(overrides: Partial<MemoryInput> = {}): MemoryInput {
   return {
     namespace: 'patterns',
-    content: 'Use StateService.write for every mutation, never touch db directly outside a repository.',
+    content:
+      'Use StateService.write for every mutation, never touch db directly outside a repository.',
     summary: 'Serialize writes through StateService',
     sourceSwarmId: null,
     sourceTaskId: null,
@@ -65,7 +66,11 @@ describe('MemoryRepository', () => {
   it('round-trips embeddings by vector id', async () => {
     const rec = await repo.create(input({ embedding: new Float32Array([0.1, 0.2, 0.3]) }));
     const map = repo.embeddingsByVectorIds([rec.vectorId]);
-    expect(Array.from(map.get(rec.vectorId) ?? [])).toEqual([Math.fround(0.1), Math.fround(0.2), Math.fround(0.3)]);
+    expect(Array.from(map.get(rec.vectorId) ?? [])).toEqual([
+      Math.fround(0.1),
+      Math.fround(0.2),
+      Math.fround(0.3),
+    ]);
   });
 
   it('iterates all embeddings in vector-id order', async () => {
@@ -76,8 +81,22 @@ describe('MemoryRepository', () => {
   });
 
   it('searches lexically, optionally scoped by namespace, ranking better matches higher', async () => {
-    await repo.create(input({ contentHash: 'a', namespace: 'patterns', content: 'retry idle connections with exponential backoff', summary: 'retry backoff pattern' }));
-    await repo.create(input({ contentHash: 'b', namespace: 'failures', content: 'the deploy failed because the health check timed out', summary: 'deploy failure' }));
+    await repo.create(
+      input({
+        contentHash: 'a',
+        namespace: 'patterns',
+        content: 'retry idle connections with exponential backoff',
+        summary: 'retry backoff pattern',
+      }),
+    );
+    await repo.create(
+      input({
+        contentHash: 'b',
+        namespace: 'failures',
+        content: 'the deploy failed because the health check timed out',
+        summary: 'deploy failure',
+      }),
+    );
     const all = repo.searchLexical('backoff', null, 10);
     expect(all.length).toBe(1);
     const scoped = repo.searchLexical('deploy', 'patterns', 10);
@@ -99,9 +118,21 @@ describe('MemoryRepository', () => {
 
   it('applies feedback, clamping confidence to [0, 1] and recording the feedback row', async () => {
     const rec = await repo.create(input({ confidence: 0.9 }));
-    await repo.applyFeedback({ memoryId: rec.id, taskId: null, verdict: 'helpful', note: 'worked great', confidenceDelta: 0.3 });
+    await repo.applyFeedback({
+      memoryId: rec.id,
+      taskId: null,
+      verdict: 'helpful',
+      note: 'worked great',
+      confidenceDelta: 0.3,
+    });
     expect(repo.get(rec.id)?.confidence).toBeCloseTo(1, 10);
-    await repo.applyFeedback({ memoryId: rec.id, taskId: null, verdict: 'wrong', note: null, confidenceDelta: -1.5 });
+    await repo.applyFeedback({
+      memoryId: rec.id,
+      taskId: null,
+      verdict: 'wrong',
+      note: null,
+      confidenceDelta: -1.5,
+    });
     expect(repo.get(rec.id)?.confidence).toBeCloseTo(0, 10);
   });
 });

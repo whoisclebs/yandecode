@@ -15,7 +15,10 @@ function initGitRepo(dir: string): void {
 
 function seedFixture(dir: string): void {
   writeFileSync(join(dir, '.gitignore'), 'ignored-by-git.txt\n');
-  writeFileSync(join(dir, 'ignored-by-git.txt'), 'should not appear when git-tracked ignore rules apply');
+  writeFileSync(
+    join(dir, 'ignored-by-git.txt'),
+    'should not appear when git-tracked ignore rules apply',
+  );
   writeFileSync(join(dir, '.env'), 'SECRET=1');
   writeFileSync(join(dir, 'binary.dat'), Buffer.from([0, 1, 2, 0, 5]));
   writeFileSync(join(dir, 'huge.txt'), 'x'.repeat(600 * 1024));
@@ -67,7 +70,13 @@ describe('scanRepository (no .git directory)', () => {
     seedFixture(root);
     const files = await scanRepository(root);
     const relPaths = files.map((f) => f.relPath).sort();
-    expect(relPaths).toEqual(['.gitignore', '.yandecodeignore', 'README.md', 'ignored-by-git.txt', 'src/index.ts']);
+    expect(relPaths).toEqual([
+      '.gitignore',
+      '.yandecodeignore',
+      'README.md',
+      'ignored-by-git.txt',
+      'src/index.ts',
+    ]);
   });
 
   it('excludes files inside DEFAULT_IGNORED_DIRS from both git and non-git scans', async () => {

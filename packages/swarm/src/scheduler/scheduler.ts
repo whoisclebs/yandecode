@@ -16,7 +16,9 @@ export function scheduleNext(input: SchedulerInput): SpawnRequest[] {
 
   for (const candidate of ready) {
     if (selected.length >= capacity) break;
-    const conflicts = candidate.paths.some((p) => claimedPatterns.some((existing) => leaseConflicts(p, existing)));
+    const conflicts = candidate.paths.some((p) =>
+      claimedPatterns.some((existing) => leaseConflicts(p, existing)),
+    );
     if (conflicts) continue;
     selected.push(candidate);
     claimedPatterns.push(...candidate.paths);

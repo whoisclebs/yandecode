@@ -22,7 +22,12 @@ export class UserRepository {
   }
 
   createWithPassword(email: string, passwordHash: string): UserRecord {
-    const user: UserRecord = { id: `u${nextId++}`, email: email.toLowerCase(), passwordHash, ssoSubject: null };
+    const user: UserRecord = {
+      id: `u${nextId++}`,
+      email: email.toLowerCase(),
+      passwordHash,
+      ssoSubject: null,
+    };
     this.byId.set(user.id, user);
     this.byEmail.set(user.email, user.id);
     return user;
@@ -31,7 +36,12 @@ export class UserRepository {
   findOrCreateBySso(email: string, ssoSubject: string): UserRecord {
     const existing = this.findByEmail(email);
     if (existing) return existing;
-    const user: UserRecord = { id: `u${nextId++}`, email: email.toLowerCase(), passwordHash: null, ssoSubject };
+    const user: UserRecord = {
+      id: `u${nextId++}`,
+      email: email.toLowerCase(),
+      passwordHash: null,
+      ssoSubject,
+    };
     this.byId.set(user.id, user);
     this.byEmail.set(user.email, user.id);
     return user;

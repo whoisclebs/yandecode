@@ -47,15 +47,22 @@ export class MemoryService {
   constructor(private readonly deps: MemoryServiceDeps) {}
 
   async store(input: MemoryStoreInput): Promise<MemoryStoreResult> {
-    const policy = evaluateWritePolicy({ content: input.content, evidence: input.evidence, confidence: input.confidence });
-    if (!policy.allowed) return { status: 'rejected', reason: policy.reason ?? 'rejected by write policy' };
+    const policy = evaluateWritePolicy({
+      content: input.content,
+      evidence: input.evidence,
+      confidence: input.confidence,
+    });
+    if (!policy.allowed)
+      return { status: 'rejected', reason: policy.reason ?? 'rejected by write policy' };
 
     const contentHash = hashContent(input.namespace, input.content);
     const exact = this.deps.memories.findByContentHash(contentHash);
     if (exact) return { status: 'duplicate', existing: exact };
 
     const embedding = await this.deps.provider.embedDocument(input.content);
-    const nearCandidates = this.deps.index.search(embedding, 5).filter((c) => c.score >= NEAR_DUPLICATE_THRESHOLD);
+    const nearCandidates = this.deps.index
+      .search(embedding, 5)
+      .filter((c) => c.score >= NEAR_DUPLICATE_THRESHOLD);
     if (nearCandidates.length > 0) {
       const records = this.deps.memories.byVectorIds(nearCandidates.map((c) => c.id));
       const byVectorId = new Map(records.map((r) => [r.vectorId, r]));
@@ -83,6 +90,9 @@ export class MemoryService {
   }
 
   feedback(input: MemoryFeedbackInput): Promise<{ feedbackId: string }> {
-    return this.deps.memories.applyFeedback({ ...input, confidenceDelta: FEEDBACK_CONFIDENCE_DELTA[input.verdict] });
+    return this.deps.memories.applyFeedback({
+      ...input,
+      confidenceDelta: FEEDBACK_CONFIDENCE_DELTA[input.verdict],
+    });
   }
 }

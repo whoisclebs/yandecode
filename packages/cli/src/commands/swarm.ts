@@ -11,7 +11,11 @@ export function formatSwarmList(swarms: SwarmRecord[]): string {
 export function formatSwarmDetail(swarm: SwarmRecord, tasks: TaskRecord[]): string {
   const counts = new Map<TaskStatus, number>();
   for (const t of tasks) counts.set(t.status, (counts.get(t.status) ?? 0) + 1);
-  const lines = [`${swarm.id}  ${swarm.title}  [${swarm.strategy}]  status=${swarm.status}`, `Goal: ${swarm.goal}`, `Tasks (${tasks.length}):`];
+  const lines = [
+    `${swarm.id}  ${swarm.title}  [${swarm.strategy}]  status=${swarm.status}`,
+    `Goal: ${swarm.goal}`,
+    `Tasks (${tasks.length}):`,
+  ];
   for (const [status, count] of counts) lines.push(`  ${status}: ${count}`);
   return `${lines.join('\n')}\n`;
 }

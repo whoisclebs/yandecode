@@ -1,7 +1,12 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { userCacheDir } from '@yandecode/core';
-import { AutoTokenizer, pipeline, type FeatureExtractionPipeline, type PreTrainedTokenizer } from '@huggingface/transformers';
+import {
+  AutoTokenizer,
+  pipeline,
+  type FeatureExtractionPipeline,
+  type PreTrainedTokenizer,
+} from '@huggingface/transformers';
 import type { EmbeddingProvider } from './provider.js';
 
 export const QUERY_PREFIX = 'Represent this sentence for searching relevant passages: ';
@@ -46,7 +51,10 @@ export class ArcticEmbedXsProvider implements EmbeddingProvider {
 
   private getExtractor(): Promise<FeatureExtractionPipeline> {
     if (!this.extractor) {
-      this.extractor = pipeline('feature-extraction', this.modelId, { dtype: 'q8', cache_dir: this.cacheDir });
+      this.extractor = pipeline('feature-extraction', this.modelId, {
+        dtype: 'q8',
+        cache_dir: this.cacheDir,
+      });
     }
     this.touch();
     return this.extractor;

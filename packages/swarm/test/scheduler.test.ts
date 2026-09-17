@@ -3,7 +3,14 @@ import { scheduleNext } from '../src/scheduler/scheduler.js';
 import type { SchedulerTask } from '../src/scheduler/types.js';
 
 function task(overrides: Partial<SchedulerTask> & { id: string }): SchedulerTask {
-  return { status: 'ready', priority: 0, role: 'implementer', paths: [], needsWorktree: false, ...overrides };
+  return {
+    status: 'ready',
+    priority: 0,
+    role: 'implementer',
+    paths: [],
+    needsWorktree: false,
+    ...overrides,
+  };
 }
 
 describe('scheduleNext', () => {
@@ -32,7 +39,12 @@ describe('scheduleNext', () => {
   });
 
   it('returns nothing when capacity is already exhausted', () => {
-    const out = scheduleNext({ maxAgents: 2, runningCount: 2, activeLeases: [], tasks: [task({ id: 't1' })] });
+    const out = scheduleNext({
+      maxAgents: 2,
+      runningCount: 2,
+      activeLeases: [],
+      tasks: [task({ id: 't1' })],
+    });
     expect(out).toEqual([]);
   });
 
@@ -41,7 +53,10 @@ describe('scheduleNext', () => {
       maxAgents: 4,
       runningCount: 1,
       activeLeases: [{ pattern: 'src/auth/**' }],
-      tasks: [task({ id: 't-conflict', priority: 1, paths: ['src/auth/login.ts'] }), task({ id: 't-ok', priority: 0, paths: ['src/http/**'] })],
+      tasks: [
+        task({ id: 't-conflict', priority: 1, paths: ['src/auth/login.ts'] }),
+        task({ id: 't-ok', priority: 0, paths: ['src/http/**'] }),
+      ],
     });
     expect(out.map((r) => r.taskId)).toEqual(['t-ok']);
   });
@@ -51,13 +66,21 @@ describe('scheduleNext', () => {
       maxAgents: 4,
       runningCount: 0,
       activeLeases: [],
-      tasks: [task({ id: 't-first', priority: 1, paths: ['src/auth/**'] }), task({ id: 't-second', priority: 0, paths: ['src/auth/login.ts'] })],
+      tasks: [
+        task({ id: 't-first', priority: 1, paths: ['src/auth/**'] }),
+        task({ id: 't-second', priority: 0, paths: ['src/auth/login.ts'] }),
+      ],
     });
     expect(out.map((r) => r.taskId)).toEqual(['t-first']);
   });
 
   it('sets needsWorktree when a task is explicitly marked, even alone in the tick', () => {
-    const out = scheduleNext({ maxAgents: 4, runningCount: 0, activeLeases: [], tasks: [task({ id: 't1', needsWorktree: true, paths: ['src/**'] })] });
+    const out = scheduleNext({
+      maxAgents: 4,
+      runningCount: 0,
+      activeLeases: [],
+      tasks: [task({ id: 't1', needsWorktree: true, paths: ['src/**'] })],
+    });
     expect(out[0]!.needsWorktree).toBe(true);
   });
 
@@ -82,7 +105,10 @@ describe('scheduleNext', () => {
       maxAgents: 4,
       runningCount: 0,
       activeLeases: [],
-      tasks: [task({ id: 't-writer', priority: 1, paths: ['src/auth/**'] }), task({ id: 't-scout', priority: 0, role: 'scout', paths: [] })],
+      tasks: [
+        task({ id: 't-writer', priority: 1, paths: ['src/auth/**'] }),
+        task({ id: 't-scout', priority: 0, role: 'scout', paths: [] }),
+      ],
     });
     expect(out.find((r) => r.taskId === 't-writer')!.needsWorktree).toBe(false);
   });

@@ -17,10 +17,14 @@
       { "hooks": [{ "type": "command", "command": "yandecode hook SubagentStop", "timeout": 10 }] }
     ],
     "WorktreeCreate": [
-      { "hooks": [{ "type": "command", "command": "yandecode hook WorktreeCreate", "timeout": 10 }] }
+      {
+        "hooks": [{ "type": "command", "command": "yandecode hook WorktreeCreate", "timeout": 10 }]
+      }
     ],
     "WorktreeRemove": [
-      { "hooks": [{ "type": "command", "command": "yandecode hook WorktreeRemove", "timeout": 10 }] }
+      {
+        "hooks": [{ "type": "command", "command": "yandecode hook WorktreeRemove", "timeout": 10 }]
+      }
     ]
   }
 }

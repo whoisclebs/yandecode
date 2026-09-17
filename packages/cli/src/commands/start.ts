@@ -17,11 +17,18 @@ export interface StartResult {
 
 export async function runStart(cwd: string, passthrough: string[]): Promise<StartResult> {
   if (passthrough.includes(DANGEROUS_FLAG)) {
-    process.stderr.write(`refusing to pass ${DANGEROUS_FLAG}: YandeCode relies on Claude Code's normal permission prompts\n`);
+    process.stderr.write(
+      `refusing to pass ${DANGEROUS_FLAG}: YandeCode relies on Claude Code's normal permission prompts\n`,
+    );
     return { exitCode: 1 };
   }
 
-  const doctorResults = runDoctor({ cwd, probeVersion: defaultProbeVersion, nodeVersion: process.version, yandecodeVersion: VERSION });
+  const doctorResults = runDoctor({
+    cwd,
+    probeVersion: defaultProbeVersion,
+    nodeVersion: process.version,
+    yandecodeVersion: VERSION,
+  });
   if (doctorExitCode(doctorResults) !== 0) {
     process.stdout.write(formatDoctor(doctorResults));
     return { exitCode: 1 };
@@ -45,13 +52,18 @@ export async function runStart(cwd: string, passthrough: string[]): Promise<Star
     const claudeBin = resolveClaudeBin();
     const probe = spawnSync(claudeBin, ['--version'], { encoding: 'utf8', timeout: 5000 });
     if (probe.status !== 0) {
-      process.stderr.write(`"${claudeBin} --version" failed; install Claude Code: https://code.claude.com/docs/en/setup\n`);
+      process.stderr.write(
+        `"${claudeBin} --version" failed; install Claude Code: https://code.claude.com/docs/en/setup\n`,
+      );
       return { exitCode: 1 };
     }
 
     await rt.events.emit({ event: 'start_launched', data: { args: passthrough } });
     const exitCode = await new Promise<number>((resolve) => {
-      const child = spawn(claudeBin, ['--agent', 'yandecode-dispatcher', ...passthrough], { stdio: 'inherit', cwd: rt.paths.root });
+      const child = spawn(claudeBin, ['--agent', 'yandecode-dispatcher', ...passthrough], {
+        stdio: 'inherit',
+        cwd: rt.paths.root,
+      });
       child.on('exit', (code) => resolve(code ?? 1));
       child.on('error', (err) => {
         process.stderr.write(`failed to launch "${claudeBin}": ${err.message}\n`);

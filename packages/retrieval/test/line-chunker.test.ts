@@ -8,7 +8,9 @@ describe('LineChunker', () => {
   it('returns one chunk for small content with 1-based lines', async () => {
     const c = new LineChunker(counter);
     const out = await c.chunk('a.txt', 'one\ntwo\nthree', 'text');
-    expect(out).toEqual([{ kind: 'text', symbol: null, startLine: 1, endLine: 3, content: 'one\ntwo\nthree' }]);
+    expect(out).toEqual([
+      { kind: 'text', symbol: null, startLine: 1, endLine: 3, content: 'one\ntwo\nthree' },
+    ]);
   });
 
   it('splits by target tokens with overlapping trailing lines', async () => {
@@ -19,7 +21,8 @@ describe('LineChunker', () => {
     expect(out[0]).toMatchObject({ startLine: 1, endLine: 5 });
     expect(out[1]?.startLine).toBe(4); // 2 lines (4 tokens) of overlap
     expect(out.at(-1)?.endLine).toBe(12);
-    for (const ch of out) expect(ch.content.split('\n')).toHaveLength(ch.endLine - ch.startLine + 1);
+    for (const ch of out)
+      expect(ch.content.split('\n')).toHaveLength(ch.endLine - ch.startLine + 1);
   });
 
   it('fragments a single oversized line and drops blank chunks', async () => {
@@ -35,6 +38,8 @@ describe('LineChunker', () => {
   it('chunkLines keeps kind and symbol and offsets line numbers', async () => {
     const c = new LineChunker(counter);
     const out = await c.chunkLines(['a', 'b'], 41, 'method', 'Foo.bar');
-    expect(out).toEqual([{ kind: 'method', symbol: 'Foo.bar', startLine: 41, endLine: 42, content: 'a\nb' }]);
+    expect(out).toEqual([
+      { kind: 'method', symbol: 'Foo.bar', startLine: 41, endLine: 42, content: 'a\nb' },
+    ]);
   });
 });

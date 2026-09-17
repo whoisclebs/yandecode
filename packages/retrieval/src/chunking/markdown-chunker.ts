@@ -33,7 +33,13 @@ export class MarkdownChunker implements Chunker {
       if (body.join('\n').trim().length === 0) continue;
       const tokens = await this.counter.countTokens(body.join('\n'));
       if (tokens <= this.limits.maxTokens) {
-        out.push({ kind: 'section', symbol: s.symbol, startLine: s.start + 1, endLine: s.end + 1, content: body.join('\n') });
+        out.push({
+          kind: 'section',
+          symbol: s.symbol,
+          startLine: s.start + 1,
+          endLine: s.end + 1,
+          content: body.join('\n'),
+        });
       } else {
         out.push(...(await this.line.chunkLines(body, s.start + 1, 'section', s.symbol)));
       }

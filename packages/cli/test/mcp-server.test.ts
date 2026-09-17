@@ -4,7 +4,15 @@ import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { describe, expect, it } from 'vitest';
-import { LeaseRepository, MemoryRepository, MessageRepository, SwarmRepository, TaskRepository, WorkspaceRepository, type MemoryRecord } from '@yandecode/core';
+import {
+  LeaseRepository,
+  MemoryRepository,
+  MessageRepository,
+  SwarmRepository,
+  TaskRepository,
+  WorkspaceRepository,
+  type MemoryRecord,
+} from '@yandecode/core';
 import { HashEmbeddingProvider, USearchVectorIndex } from '@yandecode/retrieval';
 import { MemoryRetriever, MemoryService, SwarmService } from '@yandecode/swarm';
 import { openRuntime } from '../src/context.js';
@@ -22,7 +30,10 @@ async function connect(
     ? (() => {
         const memories = new MemoryRepository(rt.state);
         const memoryProvider = new HashEmbeddingProvider(64);
-        const memoryIndex = new USearchVectorIndex({ dimensions: 64, file: join(dir, 'memory-test.usearch') });
+        const memoryIndex = new USearchVectorIndex({
+          dimensions: 64,
+          file: join(dir, 'memory-test.usearch'),
+        });
         return {
           swarmService: new SwarmService({
             swarms: new SwarmRepository(rt.state),
@@ -31,12 +42,25 @@ async function connect(
             workspaces: new WorkspaceRepository(rt.state),
           }),
           messages: new MessageRepository(rt.state),
-          memoryService: new MemoryService({ memories, provider: memoryProvider, index: memoryIndex }),
-          memoryRetriever: new MemoryRetriever({ memories, provider: memoryProvider, index: memoryIndex }),
+          memoryService: new MemoryService({
+            memories,
+            provider: memoryProvider,
+            index: memoryIndex,
+          }),
+          memoryRetriever: new MemoryRetriever({
+            memories,
+            provider: memoryProvider,
+            index: memoryIndex,
+          }),
         };
       })()
     : {};
-  const server = createMcpServer({ rt, ...(search ? { search } : {}), ...(note ? { note } : {}), ...extra });
+  const server = createMcpServer({
+    rt,
+    ...(search ? { search } : {}),
+    ...(note ? { note } : {}),
+    ...extra,
+  });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await server.connect(serverTransport);
   const client = new Client({ name: 'test', version: '0.0.0' });
@@ -126,11 +150,17 @@ describe('MCP server', () => {
   });
 
   it('prepends a note before the envelope when one is provided', async () => {
-    const { client, rt, close } = await connect(() => Promise.resolve([]), () => 'NOTE: 42 files changed since the last index; run "yandecode index".');
-    rt.state.db.exec(`INSERT INTO documents (id,path,size_bytes,content_hash,indexed_at,index_generation) VALUES ('d','a.ts',1,'h','now',1);
+    const { client, rt, close } = await connect(
+      () => Promise.resolve([]),
+      () => 'NOTE: 42 files changed since the last index; run "yandecode index".',
+    );
+    rt.state.db
+      .exec(`INSERT INTO documents (id,path,size_bytes,content_hash,indexed_at,index_generation) VALUES ('d','a.ts',1,'h','now',1);
       INSERT INTO chunks (id,document_id,vector_id,kind,start_line,end_line,content,content_hash,token_count,created_at,updated_at) VALUES ('c','d',1,'function',1,1,'x','h',1,'now','now');`);
     const r = await client.callTool({ name: 'rag_search', arguments: { query: 'x' } });
-    expect(text(r)).toMatch(/^NOTE: 42 files changed since the last index; run "yandecode index"\.\n\nUNTRUSTED_REPOSITORY_CONTEXT/);
+    expect(text(r)).toMatch(
+      /^NOTE: 42 files changed since the last index; run "yandecode index"\.\n\nUNTRUSTED_REPOSITORY_CONTEXT/,
+    );
     await close();
   });
 
@@ -167,7 +197,10 @@ describe('swarm/task/message/workspace/memory MCP tools', () => {
 
   it('returns isError when swarm deps are not wired', async () => {
     const { client, close } = await connect();
-    const r = (await client.callTool({ name: 'swarm_create', arguments: { title: 't', goal: 'g' } })) as { isError?: boolean };
+    const r = (await client.callTool({
+      name: 'swarm_create',
+      arguments: { title: 't', goal: 'g' },
+    })) as { isError?: boolean };
     expect(r.isError).toBe(true);
     await close();
   });
@@ -175,78 +208,161 @@ describe('swarm/task/message/workspace/memory MCP tools', () => {
   it('drives the full happy path: create swarm, create tasks, swarm_next, task_update, message send/read, workspace reserve/release', async () => {
     const { client, close } = await connect(undefined, undefined, true);
 
-    const created = (await client.callTool({ name: 'swarm_create', arguments: { title: 'Add auth', goal: 'Implement login' } })) as { content: { text: string }[] };
+    const created = (await client.callTool({
+      name: 'swarm_create',
+      arguments: { title: 'Add auth', goal: 'Implement login' },
+    })) as { content: { text: string }[] };
     const swarm = JSON.parse(created.content[0]!.text) as { id: string };
 
     const tasksResult = (await client.callTool({
       name: 'task_create',
-      arguments: { swarmId: swarm.id, tasks: [{ ref: 'a', title: 'Implement', description: 'd', role: 'implementer', paths: ['src/auth/**'] }] },
+      arguments: {
+        swarmId: swarm.id,
+        tasks: [
+          {
+            ref: 'a',
+            title: 'Implement',
+            description: 'd',
+            role: 'implementer',
+            paths: ['src/auth/**'],
+          },
+        ],
+      },
     })) as { content: { text: string }[] };
     const [task] = JSON.parse(tasksResult.content[0]!.text) as { id: string; status: string }[];
     expect(task!.status).toBe('planned');
 
-    await client.callTool({ name: 'task_update', arguments: { taskId: task!.id, status: 'ready' } });
-    const nextResult = (await client.callTool({ name: 'swarm_next', arguments: { swarmId: swarm.id } })) as { content: { text: string }[] };
+    await client.callTool({
+      name: 'task_update',
+      arguments: { taskId: task!.id, status: 'ready' },
+    });
+    const nextResult = (await client.callTool({
+      name: 'swarm_next',
+      arguments: { swarmId: swarm.id },
+    })) as { content: { text: string }[] };
     const spawnRequests = JSON.parse(nextResult.content[0]!.text) as { taskId: string }[];
     expect(spawnRequests.map((r) => r.taskId)).toEqual([task!.id]);
 
     const sendResult = (await client.callTool({
       name: 'message_send',
-      arguments: { swarmId: swarm.id, from: task!.id, to: 'dispatcher', type: 'finding', payload: { summary: 'x', evidence: [] } },
+      arguments: {
+        swarmId: swarm.id,
+        from: task!.id,
+        to: 'dispatcher',
+        type: 'finding',
+        payload: { summary: 'x', evidence: [] },
+      },
     })) as { content: { text: string }[] };
     expect(JSON.parse(sendResult.content[0]!.text)).toMatchObject({ type: 'finding' });
 
-    const readResult = (await client.callTool({ name: 'message_read', arguments: { swarmId: swarm.id, toAgent: 'dispatcher' } })) as { content: { text: string }[] };
+    const readResult = (await client.callTool({
+      name: 'message_read',
+      arguments: { swarmId: swarm.id, toAgent: 'dispatcher' },
+    })) as { content: { text: string }[] };
     expect(JSON.parse(readResult.content[0]!.text)).toHaveLength(1);
-    const readAgain = (await client.callTool({ name: 'message_read', arguments: { swarmId: swarm.id, toAgent: 'dispatcher' } })) as { content: { text: string }[] };
+    const readAgain = (await client.callTool({
+      name: 'message_read',
+      arguments: { swarmId: swarm.id, toAgent: 'dispatcher' },
+    })) as { content: { text: string }[] };
     expect(JSON.parse(readAgain.content[0]!.text)).toHaveLength(0);
 
     const reserveResult = (await client.callTool({
       name: 'workspace_reserve',
-      arguments: { swarmId: swarm.id, taskId: task!.id, patterns: ['docs/**'], holderAgent: task!.id },
+      arguments: {
+        swarmId: swarm.id,
+        taskId: task!.id,
+        patterns: ['docs/**'],
+        holderAgent: task!.id,
+      },
     })) as { content: { text: string }[] };
     expect(JSON.parse(reserveResult.content[0]!.text)).toMatchObject({ granted: true });
 
-    const releaseResult = (await client.callTool({ name: 'workspace_release', arguments: { taskId: task!.id } })) as { isError?: boolean };
+    const releaseResult = (await client.callTool({
+      name: 'workspace_release',
+      arguments: { taskId: task!.id },
+    })) as { isError?: boolean };
     expect(releaseResult.isError).toBeFalsy();
 
-    const cancelResult = (await client.callTool({ name: 'swarm_cancel', arguments: { swarmId: swarm.id } })) as { content: { text: string }[] };
-    expect(JSON.parse(cancelResult.content[0]!.text)).toMatchObject({ cancelledTaskIds: [task!.id] });
+    const cancelResult = (await client.callTool({
+      name: 'swarm_cancel',
+      arguments: { swarmId: swarm.id },
+    })) as { content: { text: string }[] };
+    expect(JSON.parse(cancelResult.content[0]!.text)).toMatchObject({
+      cancelledTaskIds: [task!.id],
+    });
 
     await close();
   });
 
   it('task_list filters by status and swarm_status reports task counts', async () => {
     const { client, close } = await connect(undefined, undefined, true);
-    const created = (await client.callTool({ name: 'swarm_create', arguments: { title: 't', goal: 'g' } })) as { content: { text: string }[] };
+    const created = (await client.callTool({
+      name: 'swarm_create',
+      arguments: { title: 't', goal: 'g' },
+    })) as { content: { text: string }[] };
     const swarm = JSON.parse(created.content[0]!.text) as { id: string };
-    await client.callTool({ name: 'task_create', arguments: { swarmId: swarm.id, tasks: [{ ref: 'a', title: 'a', description: 'd', role: 'implementer' }] } });
+    await client.callTool({
+      name: 'task_create',
+      arguments: {
+        swarmId: swarm.id,
+        tasks: [{ ref: 'a', title: 'a', description: 'd', role: 'implementer' }],
+      },
+    });
 
-    const all = (await client.callTool({ name: 'task_list', arguments: { swarmId: swarm.id } })) as { content: { text: string }[] };
+    const all = (await client.callTool({
+      name: 'task_list',
+      arguments: { swarmId: swarm.id },
+    })) as { content: { text: string }[] };
     expect(JSON.parse(all.content[0]!.text)).toHaveLength(1);
 
-    const readyOnly = (await client.callTool({ name: 'task_list', arguments: { swarmId: swarm.id, statuses: ['ready'] } })) as { content: { text: string }[] };
+    const readyOnly = (await client.callTool({
+      name: 'task_list',
+      arguments: { swarmId: swarm.id, statuses: ['ready'] },
+    })) as { content: { text: string }[] };
     expect(JSON.parse(readyOnly.content[0]!.text)).toHaveLength(0);
 
-    const status = (await client.callTool({ name: 'swarm_status', arguments: { swarmId: swarm.id } })) as { content: { text: string }[] };
-    expect(JSON.parse(status.content[0]!.text)).toMatchObject({ id: swarm.id, taskCounts: { planned: 1 } });
+    const status = (await client.callTool({
+      name: 'swarm_status',
+      arguments: { swarmId: swarm.id },
+    })) as { content: { text: string }[] };
+    expect(JSON.parse(status.content[0]!.text)).toMatchObject({
+      id: swarm.id,
+      taskCounts: { planned: 1 },
+    });
     await close();
   });
 
   it('stores and retrieves a memory end to end through the MCP tools', async () => {
     const { client, close } = await connect(undefined, undefined, true);
 
-    const rejected = (await client.callTool({ name: 'memory_store', arguments: { namespace: 'patterns', content: 'no evidence here' } })) as { content: { text: string }[] };
+    const rejected = (await client.callTool({
+      name: 'memory_store',
+      arguments: { namespace: 'patterns', content: 'no evidence here' },
+    })) as { content: { text: string }[] };
     expect(JSON.parse(rejected.content[0]!.text)).toMatchObject({ status: 'rejected' });
 
     const stored = (await client.callTool({
       name: 'memory_store',
-      arguments: { namespace: 'patterns', content: 'retry idle connections with exponential backoff', evidence: 'task-1', confidence: 0.7 },
+      arguments: {
+        namespace: 'patterns',
+        content: 'retry idle connections with exponential backoff',
+        evidence: 'task-1',
+        confidence: 0.7,
+      },
     })) as { content: { text: string }[] };
-    const parsedStored = JSON.parse(stored.content[0]!.text) as { status: string; memory?: MemoryRecord };
+    const parsedStored = JSON.parse(stored.content[0]!.text) as {
+      status: string;
+      memory?: MemoryRecord;
+    };
     expect(parsedStored.status).toBe('stored');
 
-    const searched = (await client.callTool({ name: 'memory_search', arguments: { query: 'retry idle connections with exponential backoff', namespace: 'patterns' } })) as { content: { text: string }[] };
+    const searched = (await client.callTool({
+      name: 'memory_search',
+      arguments: {
+        query: 'retry idle connections with exponential backoff',
+        namespace: 'patterns',
+      },
+    })) as { content: { text: string }[] };
     const hits = JSON.parse(searched.content[0]!.text) as { id: string }[];
     expect(hits.map((h) => h.id)).toContain(parsedStored.memory!.id);
 
@@ -255,7 +371,9 @@ describe('swarm/task/message/workspace/memory MCP tools', () => {
 
   it('returns isError when memory deps are not wired', async () => {
     const { client, close } = await connect();
-    const r = (await client.callTool({ name: 'memory_search', arguments: { query: 'x' } })) as { isError?: boolean };
+    const r = (await client.callTool({ name: 'memory_search', arguments: { query: 'x' } })) as {
+      isError?: boolean;
+    };
     expect(r.isError).toBe(true);
     await close();
   });

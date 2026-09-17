@@ -16,6 +16,14 @@ describe('detectLanguage', () => {
     expect(detectLanguage('photo.PNG')).toBeNull();
   });
   it('has a grammar for each tree-sitter language', () => {
-    expect(Object.keys(GRAMMAR_FILES).sort()).toEqual(['go', 'java', 'javascript', 'python', 'rust', 'tsx', 'typescript']);
+    expect(Object.keys(GRAMMAR_FILES).sort()).toEqual([
+      'go',
+      'java',
+      'javascript',
+      'python',
+      'rust',
+      'tsx',
+      'typescript',
+    ]);
   });
 });

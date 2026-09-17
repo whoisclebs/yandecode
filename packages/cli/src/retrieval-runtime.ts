@@ -21,14 +21,18 @@ export interface Retrieval {
 
 function createProvider(rt: RuntimeContext): EmbeddingProvider {
   if (process.env.YANDECODE_EMBEDDINGS === 'hash') return new HashEmbeddingProvider(64);
-  return new ArcticEmbedXsProvider({ cacheDir: resolveModelCacheDir(process.env), modelId: rt.config.rag.embeddingModel });
+  return new ArcticEmbedXsProvider({
+    cacheDir: resolveModelCacheDir(process.env),
+    modelId: rt.config.rag.embeddingModel,
+  });
 }
 
 export function createRetrieval(rt: RuntimeContext): Retrieval {
   const provider = createProvider(rt);
   const documents = new DocumentRepository(rt.state);
   const chunker = createDefaultChunker(provider);
-  const openIndex = (file: string | null): USearchVectorIndex => new USearchVectorIndex({ dimensions: provider.dimensions, file });
+  const openIndex = (file: string | null): USearchVectorIndex =>
+    new USearchVectorIndex({ dimensions: provider.dimensions, file });
 
   const indexing = new IndexingService({
     root: rt.paths.root,

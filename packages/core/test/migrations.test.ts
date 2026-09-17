@@ -8,9 +8,23 @@ import {
 import { openDatabase } from '../src/persistence/open.js';
 
 const EXPECTED_TABLES = [
-  'schema_migrations', 'sessions', 'events', 'documents', 'chunks', 'vector_index_meta', 'index_dirty', 'vector_id_seq',
-  'swarms', 'workspaces', 'tasks', 'task_dependencies', 'task_paths', 'leases', 'messages',
-  'memories', 'memory_feedback',
+  'schema_migrations',
+  'sessions',
+  'events',
+  'documents',
+  'chunks',
+  'vector_index_meta',
+  'index_dirty',
+  'vector_id_seq',
+  'swarms',
+  'workspaces',
+  'tasks',
+  'task_dependencies',
+  'task_paths',
+  'leases',
+  'messages',
+  'memories',
+  'memory_feedback',
 ];
 
 describe('migrations', () => {
@@ -82,14 +96,18 @@ describe('migrations', () => {
   it('migration 0002 adds the chunks.embedding column', () => {
     const db = openDatabase(':memory:');
     runMigrations(db);
-    const cols = (db.prepare('PRAGMA table_info(chunks)').all() as { name: string }[]).map((c) => c.name);
+    const cols = (db.prepare('PRAGMA table_info(chunks)').all() as { name: string }[]).map(
+      (c) => c.name,
+    );
     expect(cols).toContain('embedding');
   });
 
   it('migration 0004 adds the memories.embedding column', () => {
     const db = openDatabase(':memory:');
     runMigrations(db);
-    const cols = (db.prepare('PRAGMA table_info(memories)').all() as { name: string }[]).map((c) => c.name);
+    const cols = (db.prepare('PRAGMA table_info(memories)').all() as { name: string }[]).map(
+      (c) => c.name,
+    );
     expect(cols).toContain('embedding');
   });
 });

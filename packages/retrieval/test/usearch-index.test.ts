@@ -2,7 +2,11 @@ import { existsSync, mkdtempSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { generationFileName, listGenerations, removeOtherGenerations } from '../src/vector/generations.js';
+import {
+  generationFileName,
+  listGenerations,
+  removeOtherGenerations,
+} from '../src/vector/generations.js';
 import type { VectorRecord } from '../src/vector/types.js';
 import { USearchVectorIndex } from '../src/vector/usearch-index.js';
 
@@ -87,7 +91,10 @@ describe('generations', () => {
   it('lists and prunes generation files', () => {
     const dir = mkdtempSync(join(tmpdir(), 'yc-generations-'));
     for (const generation of [1, 2, 3]) {
-      new USearchVectorIndex({ dimensions: 3, file: join(dir, generationFileName('repository', generation)) }).save();
+      new USearchVectorIndex({
+        dimensions: 3,
+        file: join(dir, generationFileName('repository', generation)),
+      }).save();
     }
     expect(listGenerations(dir, 'repository')).toEqual([1, 2, 3]);
     removeOtherGenerations(dir, 'repository', 3);

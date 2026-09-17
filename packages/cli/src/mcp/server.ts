@@ -1,6 +1,11 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { MessageRepository, TaskStatus } from '@yandecode/core';
-import type { MemoryRetriever, MemoryService, SwarmService, TaskCreateInput } from '@yandecode/swarm';
+import type {
+  MemoryRetriever,
+  MemoryService,
+  SwarmService,
+  TaskCreateInput,
+} from '@yandecode/swarm';
 import { z } from 'zod';
 import type { RuntimeContext } from '../context.js';
 import { VERSION } from '../version.js';
@@ -27,17 +32,39 @@ export interface McpDeps {
 }
 
 const NOT_AVAILABLE = 'RAG index not available. Run "yandecode index" in the project root.';
-const TASK_STATUSES = ['planned', 'ready', 'claimed', 'running', 'blocked', 'review', 'completed', 'failed', 'cancelled'] as const;
+const TASK_STATUSES = [
+  'planned',
+  'ready',
+  'claimed',
+  'running',
+  'blocked',
+  'review',
+  'completed',
+  'failed',
+  'cancelled',
+] as const;
 const MESSAGE_TYPES = ['finding', 'question', 'answer', 'dependency', 'warning', 'result'] as const;
-const SWARM_NOT_AVAILABLE = 'Swarm orchestration not available: this session was not opened with swarm support.';
-const MEMORY_NAMESPACES = ['decisions', 'patterns', 'solutions', 'failures', 'tasks', 'feedback'] as const;
-const MEMORY_NOT_AVAILABLE = 'Memory not available: this session was not opened with memory support.';
+const SWARM_NOT_AVAILABLE =
+  'Swarm orchestration not available: this session was not opened with swarm support.';
+const MEMORY_NAMESPACES = [
+  'decisions',
+  'patterns',
+  'solutions',
+  'failures',
+  'tasks',
+  'feedback',
+] as const;
+const MEMORY_NOT_AVAILABLE =
+  'Memory not available: this session was not opened with memory support.';
 
 function jsonResult(value: unknown): { content: [{ type: 'text'; text: string }] } {
   return { content: [{ type: 'text', text: JSON.stringify(value) }] };
 }
 
-function unavailable(message: string): { isError: true; content: [{ type: 'text'; text: string }] } {
+function unavailable(message: string): {
+  isError: true;
+  content: [{ type: 'text'; text: string }];
+} {
   return { isError: true, content: [{ type: 'text', text: message }] };
 }
 
@@ -117,17 +144,34 @@ export function createMcpServer(deps: McpDeps): McpServer {
 
   server.registerTool(
     'swarm_create',
-    { description: 'Create a new swarm for a coordinated multi-task effort.', inputSchema: { title: z.string().min(1).max(200), goal: z.string().min(1).max(2000), strategy: z.enum(['adaptive', 'pipeline', 'star']).default('adaptive'), maxAgents: z.number().int().min(1).max(8).optional() } },
+    {
+      description: 'Create a new swarm for a coordinated multi-task effort.',
+      inputSchema: {
+        title: z.string().min(1).max(200),
+        goal: z.string().min(1).max(2000),
+        strategy: z.enum(['adaptive', 'pipeline', 'star']).default('adaptive'),
+        maxAgents: z.number().int().min(1).max(8).optional(),
+      },
+    },
     async ({ title, goal, strategy, maxAgents }) => {
       if (!deps.swarmService) return unavailable(SWARM_NOT_AVAILABLE);
-      const swarm = await deps.swarmService.createSwarm({ title, goal, strategy, ...(maxAgents !== undefined ? { maxAgents } : {}), sessionId: null });
+      const swarm = await deps.swarmService.createSwarm({
+        title,
+        goal,
+        strategy,
+        ...(maxAgents !== undefined ? { maxAgents } : {}),
+        sessionId: null,
+      });
       return jsonResult(swarm);
     },
   );
 
   server.registerTool(
     'swarm_status',
-    { description: 'Report a swarm and its task counts by status.', inputSchema: { swarmId: z.string().min(1) } },
+    {
+      description: 'Report a swarm and its task counts by status.',
+      inputSchema: { swarmId: z.string().min(1) },
+    },
     ({ swarmId }) => {
       if (!deps.swarmService) return Promise.resolve(unavailable(SWARM_NOT_AVAILABLE));
       const tasks = deps.swarmService.taskList(swarmId);
@@ -140,7 +184,10 @@ export function createMcpServer(deps: McpDeps): McpServer {
 
   server.registerTool(
     'swarm_next',
-    { description: 'Get the next batch of ready tasks to spawn as workers.', inputSchema: { swarmId: z.string().min(1) } },
+    {
+      description: 'Get the next batch of ready tasks to spawn as workers.',
+      inputSchema: { swarmId: z.string().min(1) },
+    },
     async ({ swarmId }) => {
       if (!deps.swarmService) return unavailable(SWARM_NOT_AVAILABLE);
       return jsonResult(await deps.swarmService.swarmNext(swarmId));
@@ -149,7 +196,10 @@ export function createMcpServer(deps: McpDeps): McpServer {
 
   server.registerTool(
     'swarm_cancel',
-    { description: 'Cancel every non-terminal task in a swarm and release its leases.', inputSchema: { swarmId: z.string().min(1) } },
+    {
+      description: 'Cancel every non-terminal task in a swarm and release its leases.',
+      inputSchema: { swarmId: z.string().min(1) },
+    },
     async ({ swarmId }) => {
       if (!deps.swarmService) return unavailable(SWARM_NOT_AVAILABLE);
       return jsonResult(await deps.swarmService.swarmCancel(swarmId));
@@ -199,7 +249,13 @@ export function createMcpServer(deps: McpDeps): McpServer {
 
   server.registerTool(
     'task_list',
-    { description: 'List tasks in a swarm, optionally filtered by status.', inputSchema: { swarmId: z.string().min(1), statuses: z.array(z.enum(TASK_STATUSES)).optional() } },
+    {
+      description: 'List tasks in a swarm, optionally filtered by status.',
+      inputSchema: {
+        swarmId: z.string().min(1),
+        statuses: z.array(z.enum(TASK_STATUSES)).optional(),
+      },
+    },
     ({ swarmId, statuses }) => {
       if (!deps.swarmService) return Promise.resolve(unavailable(SWARM_NOT_AVAILABLE));
       return Promise.resolve(jsonResult(deps.swarmService.taskList(swarmId, statuses)));
@@ -234,7 +290,13 @@ export function createMcpServer(deps: McpDeps): McpServer {
     'message_send',
     {
       description: 'Send a structured message to another agent in the same swarm.',
-      inputSchema: { swarmId: z.string().min(1), from: z.string().min(1), to: z.string().min(1), type: z.enum(MESSAGE_TYPES), payload: z.unknown() },
+      inputSchema: {
+        swarmId: z.string().min(1),
+        from: z.string().min(1),
+        to: z.string().min(1),
+        type: z.enum(MESSAGE_TYPES),
+        payload: z.unknown(),
+      },
     },
     async ({ swarmId, from, to, type, payload }) => {
       if (!deps.messages) return unavailable(SWARM_NOT_AVAILABLE);
@@ -244,7 +306,10 @@ export function createMcpServer(deps: McpDeps): McpServer {
 
   server.registerTool(
     'message_read',
-    { description: 'Read and mark-as-read every unread message addressed to an agent in a swarm.', inputSchema: { swarmId: z.string().min(1), toAgent: z.string().min(1) } },
+    {
+      description: 'Read and mark-as-read every unread message addressed to an agent in a swarm.',
+      inputSchema: { swarmId: z.string().min(1), toAgent: z.string().min(1) },
+    },
     async ({ swarmId, toAgent }) => {
       if (!deps.messages) return unavailable(SWARM_NOT_AVAILABLE);
       const unread = deps.messages.listUnreadFor(swarmId, toAgent);
@@ -256,18 +321,29 @@ export function createMcpServer(deps: McpDeps): McpServer {
   server.registerTool(
     'workspace_reserve',
     {
-      description: 'Reserve one or more file-path patterns for a task, failing atomically if any pattern conflicts with an active lease.',
-      inputSchema: { swarmId: z.string().min(1), taskId: z.string().min(1), patterns: z.array(z.string().min(1)).min(1).max(20), holderAgent: z.string().min(1) },
+      description:
+        'Reserve one or more file-path patterns for a task, failing atomically if any pattern conflicts with an active lease.',
+      inputSchema: {
+        swarmId: z.string().min(1),
+        taskId: z.string().min(1),
+        patterns: z.array(z.string().min(1)).min(1).max(20),
+        holderAgent: z.string().min(1),
+      },
     },
     async ({ swarmId, taskId, patterns, holderAgent }) => {
       if (!deps.swarmService) return unavailable(SWARM_NOT_AVAILABLE);
-      return jsonResult(await deps.swarmService.workspaceReserve({ swarmId, taskId, patterns, holderAgent }));
+      return jsonResult(
+        await deps.swarmService.workspaceReserve({ swarmId, taskId, patterns, holderAgent }),
+      );
     },
   );
 
   server.registerTool(
     'workspace_release',
-    { description: 'Release every path reservation a task currently holds.', inputSchema: { taskId: z.string().min(1) } },
+    {
+      description: 'Release every path reservation a task currently holds.',
+      inputSchema: { taskId: z.string().min(1) },
+    },
     async ({ taskId }) => {
       if (!deps.swarmService) return unavailable(SWARM_NOT_AVAILABLE);
       await deps.swarmService.workspaceRelease(taskId);
@@ -278,7 +354,8 @@ export function createMcpServer(deps: McpDeps): McpServer {
   server.registerTool(
     'memory_store',
     {
-      description: 'Store a durable memory (a decision, pattern, solution, failure, task note, or feedback) with evidence, for future sessions to retrieve.',
+      description:
+        'Store a durable memory (a decision, pattern, solution, failure, task note, or feedback) with evidence, for future sessions to retrieve.',
       inputSchema: {
         namespace: z.enum(MEMORY_NAMESPACES),
         content: z.string().min(1).max(4000),
@@ -308,11 +385,18 @@ export function createMcpServer(deps: McpDeps): McpServer {
     'memory_search',
     {
       description: 'Search stored memories by relevance, optionally scoped to one namespace.',
-      inputSchema: { query: z.string().min(1), namespace: z.enum(MEMORY_NAMESPACES).optional(), limit: z.number().int().min(1).max(20).optional() },
+      inputSchema: {
+        query: z.string().min(1),
+        namespace: z.enum(MEMORY_NAMESPACES).optional(),
+        limit: z.number().int().min(1).max(20).optional(),
+      },
     },
     async ({ query, namespace, limit }) => {
       if (!deps.memoryRetriever) return unavailable(MEMORY_NOT_AVAILABLE);
-      const hits = await deps.memoryRetriever.search(query, { namespace: namespace ?? null, ...(limit !== undefined ? { limit } : {}) });
+      const hits = await deps.memoryRetriever.search(query, {
+        namespace: namespace ?? null,
+        ...(limit !== undefined ? { limit } : {}),
+      });
       return jsonResult(hits);
     },
   );

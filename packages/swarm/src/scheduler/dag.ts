@@ -13,7 +13,10 @@ export function validateAcyclic(nodes: DagNode[]): void {
     const current = state.get(id);
     if (current === 'done') return;
     if (current === 'visiting') {
-      throw new YandeCodeError('CYCLIC_TASK_DEPENDENCY', `cycle detected: ${[...path, id].join(' -> ')}`);
+      throw new YandeCodeError(
+        'CYCLIC_TASK_DEPENDENCY',
+        `cycle detected: ${[...path, id].join(' -> ')}`,
+      );
     }
     state.set(id, 'visiting');
     for (const dep of graph.get(id) ?? []) visit(dep, [...path, id]);

@@ -28,7 +28,9 @@ function name(n: Node): string | null {
 }
 
 function endRowOf(n: Node): number {
-  return n.endPosition.column === 0 && n.endPosition.row > n.startPosition.row ? n.endPosition.row - 1 : n.endPosition.row;
+  return n.endPosition.column === 0 && n.endPosition.row > n.startPosition.row
+    ? n.endPosition.row - 1
+    : n.endPosition.row;
 }
 
 function unitOf(n: Node, kind: string, symbol: string | null, members: Unit[] = []): Unit {
@@ -47,7 +49,11 @@ function jsMembers(body: Node | null, parent: string | null): Unit[] {
   if (!body) return [];
   const out: Unit[] = [];
   for (const m of body.namedChildren) {
-    if (m.type === 'method_definition' || m.type === 'abstract_method_signature' || m.type === 'method_signature') {
+    if (
+      m.type === 'method_definition' ||
+      m.type === 'abstract_method_signature' ||
+      m.type === 'method_signature'
+    ) {
       const n = name(m);
       out.push(unitOf(m, 'method', parent && n ? `${parent}.${n}` : n));
     }
@@ -75,7 +81,10 @@ const JS_RULES: Rules = {
       case 'variable_declaration': {
         const decl = n.namedChildren.find((c) => c.type === 'variable_declarator');
         const value = decl?.childForFieldName('value');
-        const isFn = value?.type === 'arrow_function' || value?.type === 'function' || value?.type === 'function_expression';
+        const isFn =
+          value?.type === 'arrow_function' ||
+          value?.type === 'function' ||
+          value?.type === 'function_expression';
         if (!isFn) return null;
         return { kind: 'function', symbol: decl ? name(decl) : null };
       }
@@ -83,7 +92,8 @@ const JS_RULES: Rules = {
         const call = n.namedChildren[0];
         if (call?.type === 'call_expression') {
           const fn = call.childForFieldName('function')?.text ?? '';
-          if (TEST_FNS.has(fn.split('.')[0] ?? '')) return { kind: 'test', symbol: firstStringArg(call) };
+          if (TEST_FNS.has(fn.split('.')[0] ?? ''))
+            return { kind: 'test', symbol: firstStringArg(call) };
         }
         return null;
       }
@@ -91,7 +101,8 @@ const JS_RULES: Rules = {
         return null;
     }
   },
-  members: (n, parent) => (n.type.endsWith('class_declaration') ? jsMembers(n.childForFieldName('body'), parent) : []),
+  members: (n, parent) =>
+    n.type.endsWith('class_declaration') ? jsMembers(n.childForFieldName('body'), parent) : [],
 };
 
 const PY_RULES: Rules = {
@@ -122,14 +133,18 @@ const GO_RULES: Rules = {
     if (n.type === 'function_declaration') return { kind: 'function', symbol: name(n) };
     if (n.type === 'method_declaration') {
       const recv = n.childForFieldName('receiver');
-      const recvType = recv?.namedChildren[0]?.childForFieldName('type')?.text.replace(/^\*/, '') ?? null;
+      const recvType =
+        recv?.namedChildren[0]?.childForFieldName('type')?.text.replace(/^\*/, '') ?? null;
       const nm = name(n);
       return { kind: 'method', symbol: recvType && nm ? `${recvType}.${nm}` : nm };
     }
     if (n.type === 'type_declaration') {
       const spec = n.namedChildren.find((c) => c.type === 'type_spec');
       const t = spec?.childForFieldName('type')?.type ?? '';
-      return { kind: t === 'struct_type' ? 'struct' : t === 'interface_type' ? 'interface' : 'type', symbol: spec ? name(spec) : null };
+      return {
+        kind: t === 'struct_type' ? 'struct' : t === 'interface_type' ? 'interface' : 'type',
+        symbol: spec ? name(spec) : null,
+      };
     }
     return null;
   },
@@ -274,9 +289,23 @@ export class TreeSitterChunker implements Chunker {
     const text = lines.slice(u.startRow, u.endRow + 1).join('\n');
     const tokens = await this.counter.countTokens(text);
     if (tokens <= this.limits.maxTokens) {
-      return [{ kind: u.kind, symbol: u.symbol, startLine: u.startRow + 1, endLine: u.endRow + 1, content: text }];
+      return [
+        {
+          kind: u.kind,
+          symbol: u.symbol,
+          startLine: u.startRow + 1,
+          endLine: u.endRow + 1,
+          content: text,
+        },
+      ];
     }
-    if (u.members.length === 0) return this.line.chunkLines(lines.slice(u.startRow, u.endRow + 1), u.startRow + 1, u.kind, u.symbol);
+    if (u.members.length === 0)
+      return this.line.chunkLines(
+        lines.slice(u.startRow, u.endRow + 1),
+        u.startRow + 1,
+        u.kind,
+        u.symbol,
+      );
 
     const out: Chunk[] = [];
     const covered = new Set<number>();
@@ -284,8 +313,23 @@ export class TreeSitterChunker implements Chunker {
       for (let r = m.startRow; r <= m.endRow; r++) covered.add(r);
       const mText = lines.slice(m.startRow, m.endRow + 1).join('\n');
       const mTokens = await this.counter.countTokens(mText);
-      if (mTokens <= this.limits.maxTokens) out.push({ kind: m.kind, symbol: m.symbol, startLine: m.startRow + 1, endLine: m.endRow + 1, content: mText });
-      else out.push(...(await this.line.chunkLines(lines.slice(m.startRow, m.endRow + 1), m.startRow + 1, m.kind, m.symbol)));
+      if (mTokens <= this.limits.maxTokens)
+        out.push({
+          kind: m.kind,
+          symbol: m.symbol,
+          startLine: m.startRow + 1,
+          endLine: m.endRow + 1,
+          content: mText,
+        });
+      else
+        out.push(
+          ...(await this.line.chunkLines(
+            lines.slice(m.startRow, m.endRow + 1),
+            m.startRow + 1,
+            m.kind,
+            m.symbol,
+          )),
+        );
     }
     const shellRows: number[] = [];
     for (let r = u.startRow; r <= u.endRow; r++) if (!covered.has(r)) shellRows.push(r);

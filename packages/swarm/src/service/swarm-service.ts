@@ -206,7 +206,9 @@ export class SwarmService {
   }
 
   taskList(swarmId: string, statuses?: TaskStatus[]): TaskRecord[] {
-    return statuses && statuses.length > 0 ? this.deps.tasks.listByStatus(swarmId, statuses) : this.deps.tasks.listBySwarm(swarmId);
+    return statuses && statuses.length > 0
+      ? this.deps.tasks.listByStatus(swarmId, statuses)
+      : this.deps.tasks.listBySwarm(swarmId);
   }
 
   getSwarm(swarmId: string): SwarmRecord | null {
@@ -234,7 +236,10 @@ export class SwarmService {
   }): Promise<WorkspaceReserveResult> {
     const task = this.deps.tasks.get(input.taskId);
     if (!task || task.swarmId !== input.swarmId) {
-      throw new YandeCodeError('TASK_SWARM_MISMATCH', `task ${input.taskId} does not belong to swarm ${input.swarmId}`);
+      throw new YandeCodeError(
+        'TASK_SWARM_MISMATCH',
+        `task ${input.taskId} does not belong to swarm ${input.swarmId}`,
+      );
     }
     return this.deps.leases.reserveIfNoConflict(input, (pattern, active) =>
       active.filter((lease) => leaseConflicts(pattern, lease.pattern)),

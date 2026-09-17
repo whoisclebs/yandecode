@@ -1,11 +1,31 @@
 import { basename, extname } from 'node:path';
 
 const BY_EXT: Record<string, string> = {
-  ts: 'typescript', mts: 'typescript', cts: 'typescript', tsx: 'tsx',
-  js: 'javascript', mjs: 'javascript', cjs: 'javascript', jsx: 'javascript',
-  py: 'python', go: 'go', java: 'java', rs: 'rust',
-  md: 'markdown', mdx: 'markdown', json: 'json', yml: 'yaml', yaml: 'yaml', toml: 'toml',
-  sh: 'shell', bash: 'shell', css: 'css', scss: 'css', html: 'html', sql: 'sql', txt: 'text',
+  ts: 'typescript',
+  mts: 'typescript',
+  cts: 'typescript',
+  tsx: 'tsx',
+  js: 'javascript',
+  mjs: 'javascript',
+  cjs: 'javascript',
+  jsx: 'javascript',
+  py: 'python',
+  go: 'go',
+  java: 'java',
+  rs: 'rust',
+  md: 'markdown',
+  mdx: 'markdown',
+  json: 'json',
+  yml: 'yaml',
+  yaml: 'yaml',
+  toml: 'toml',
+  sh: 'shell',
+  bash: 'shell',
+  css: 'css',
+  scss: 'css',
+  html: 'html',
+  sql: 'sql',
+  txt: 'text',
 };
 const BY_NAME: Record<string, string> = { Dockerfile: 'text', Makefile: 'text' };
 

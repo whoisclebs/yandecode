@@ -64,31 +64,51 @@ export class SwarmRepository {
       const now = nowIso();
       db.prepare(
         'INSERT INTO swarms (id, title, goal, strategy, status, max_agents, session_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      ).run(id, input.title, input.goal, input.strategy, 'active', input.maxAgents, input.sessionId, now, now);
-      return { id, title: input.title, goal: input.goal, strategy: input.strategy, status: 'active', maxAgents: input.maxAgents, sessionId: input.sessionId, createdAt: now, updatedAt: now, completedAt: null };
+      ).run(
+        id,
+        input.title,
+        input.goal,
+        input.strategy,
+        'active',
+        input.maxAgents,
+        input.sessionId,
+        now,
+        now,
+      );
+      return {
+        id,
+        title: input.title,
+        goal: input.goal,
+        strategy: input.strategy,
+        status: 'active',
+        maxAgents: input.maxAgents,
+        sessionId: input.sessionId,
+        createdAt: now,
+        updatedAt: now,
+        completedAt: null,
+      };
     });
   }
 
   get(id: string): SwarmRecord | null {
-    const row = this.state.read((db) => db.prepare('SELECT * FROM swarms WHERE id = ?').get(id)) as Row | undefined;
+    const row = this.state.read((db) => db.prepare('SELECT * FROM swarms WHERE id = ?').get(id)) as
+      Row | undefined;
     return row ? fromRow(row) : null;
   }
 
   setStatus(id: string, status: SwarmStatus): Promise<void> {
     return this.state.write((db) => {
       const now = nowIso();
-      db.prepare('UPDATE swarms SET status = ?, updated_at = ?, completed_at = CASE WHEN ? THEN ? ELSE completed_at END WHERE id = ?').run(
-        status,
-        now,
-        TERMINAL.has(status) ? 1 : 0,
-        now,
-        id,
-      );
+      db.prepare(
+        'UPDATE swarms SET status = ?, updated_at = ?, completed_at = CASE WHEN ? THEN ? ELSE completed_at END WHERE id = ?',
+      ).run(status, now, TERMINAL.has(status) ? 1 : 0, now, id);
     });
   }
 
   listActive(): SwarmRecord[] {
-    const rows = this.state.read((db) => db.prepare("SELECT * FROM swarms WHERE status = 'active' ORDER BY created_at").all()) as Row[];
+    const rows = this.state.read((db) =>
+      db.prepare("SELECT * FROM swarms WHERE status = 'active' ORDER BY created_at").all(),
+    ) as Row[];
     return rows.map(fromRow);
   }
 }

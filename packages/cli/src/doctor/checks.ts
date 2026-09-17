@@ -10,7 +10,12 @@ import {
   schemaVersion,
   sha256,
 } from '@yandecode/core';
-import { listGenerations, modelIsCached, resolveModelCacheDir, USearchVectorIndex } from '@yandecode/retrieval';
+import {
+  listGenerations,
+  modelIsCached,
+  resolveModelCacheDir,
+  USearchVectorIndex,
+} from '@yandecode/retrieval';
 import { CLAUDE_MD_START } from '../integration/claude-md.js';
 import { isMalformedJson, readJsonSafe } from '../integration/json-utils.js';
 import { readManifest } from '../integration/manifest.js';
@@ -71,22 +76,33 @@ function usearchCheck(): CheckResult {
     new USearchVectorIndex({ dimensions: 384, file: null });
     return { name: 'USearch', status: 'ok', detail: 'native binary loaded' };
   } catch (error) {
-    return { name: 'USearch', status: 'fail', detail: (error as Error).message, fix: 'reinstall yandecode; native binary failed to load' };
+    return {
+      name: 'USearch',
+      status: 'fail',
+      detail: (error as Error).message,
+      fix: 'reinstall yandecode; native binary failed to load',
+    };
   }
 }
 
 function repositoryIndexCheck(stateDbFile: string, indexesDir: string): CheckResult {
-  if (!existsSync(stateDbFile)) return { name: 'Repository index', status: 'skip', detail: 'no database' };
+  if (!existsSync(stateDbFile))
+    return { name: 'Repository index', status: 'skip', detail: 'no database' };
   const db = openDatabase(stateDbFile);
   try {
-    const meta = db.prepare('SELECT generation, vector_count, file_path FROM vector_index_meta WHERE name = ?').get('repository') as
-      | { generation: number; vector_count: number; file_path: string }
-      | undefined;
-    if (!meta) return { name: 'Repository index', status: 'warn', detail: 'not built; run yandecode index' };
+    const meta = db
+      .prepare('SELECT generation, vector_count, file_path FROM vector_index_meta WHERE name = ?')
+      .get('repository') as
+      { generation: number; vector_count: number; file_path: string } | undefined;
+    if (!meta)
+      return { name: 'Repository index', status: 'warn', detail: 'not built; run yandecode index' };
     const chunks = (db.prepare('SELECT COUNT(*) AS c FROM chunks').get() as { c: number }).c;
     const onDisk = existsSync(indexesDir) ? listGenerations(indexesDir, 'repository') : [];
     const maxOnDisk = onDisk.length > 0 ? Math.max(...onDisk) : null;
-    const outOfSync = !existsSync(meta.file_path) || meta.vector_count !== chunks || (maxOnDisk !== null && maxOnDisk !== meta.generation);
+    const outOfSync =
+      !existsSync(meta.file_path) ||
+      meta.vector_count !== chunks ||
+      (maxOnDisk !== null && maxOnDisk !== meta.generation);
     if (outOfSync) {
       return {
         name: 'Repository index',
@@ -95,7 +111,11 @@ function repositoryIndexCheck(stateDbFile: string, indexesDir: string): CheckRes
         fix: 'yandecode index --rebuild-vectors',
       };
     }
-    return { name: 'Repository index', status: 'ok', detail: `${chunks} chunks, generation ${meta.generation}` };
+    return {
+      name: 'Repository index',
+      status: 'ok',
+      detail: `${chunks} chunks, generation ${meta.generation}`,
+    };
   } finally {
     db.close();
   }

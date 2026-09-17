@@ -14,8 +14,12 @@ registerCommand((program) => {
       const rt = openRuntime(process.cwd());
       const retrieval = createRetrieval(rt);
       try {
-        const hits = await retrieval.retriever.search(query, { limit: options.limit ?? rt.config.rag.maxResults });
-        process.stdout.write(options.json ? `${JSON.stringify(hits, null, 2)}\n` : formatRagResults(query, hits));
+        const hits = await retrieval.retriever.search(query, {
+          limit: options.limit ?? rt.config.rag.maxResults,
+        });
+        process.stdout.write(
+          options.json ? `${JSON.stringify(hits, null, 2)}\n` : formatRagResults(query, hits),
+        );
       } finally {
         await retrieval.dispose();
         rt.close();
