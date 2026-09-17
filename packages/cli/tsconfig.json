@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "rootDir": "src", "outDir": "dist" },
+  "compilerOptions": { "rootDir": "src", "outDir": "dist", "resolveJsonModule": true },
   "include": ["src"],
   "references": [{ "path": "../core" }, { "path": "../retrieval" }, { "path": "../swarm" }]
 }
