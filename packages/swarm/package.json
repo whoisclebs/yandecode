@@ -1,8 +1,7 @@
 {
   "name": "@yandecode/swarm",
   "version": "0.1.0",
-  "private": true,
-  "description": "YandeCode swarm: task DAG, scheduler, leases, messaging, memory (Phase 4/5)",
+  "description": "YandeCode swarm: task DAG, scheduler, leases, messaging, memory",
   "license": "MIT",
   "type": "module",
   "engines": {

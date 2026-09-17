@@ -8,7 +8,7 @@ The harness runs on a developer machine next to a repository. Retrieval must wor
 
 ## Decision
 
-All state lives under `.yandecode/` in the project (SQLite, vector index, logs, cache) and the embedding model runs locally via ONNX. No Docker, PostgreSQL, Redis, cloud vector databases or external embedding APIs. External telemetry is off and does not exist in v0.
+All per-project state lives under `.yandecode/` in the project (SQLite, vector index, logs, cache) and the embedding model runs locally via ONNX. The one exception is the downloaded ONNX model weights themselves, which are cached once per machine in the OS user cache directory (`userCacheDir()/models`, shared across every project) rather than duplicated per-project — still entirely local, never uploaded anywhere. No Docker, PostgreSQL, Redis, cloud vector databases or external embedding APIs. External telemetry is off and does not exist in v0.
 
 ## Alternatives considered
 

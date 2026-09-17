@@ -18,7 +18,14 @@ two patterns that would not, in fact, ever match the same file, but it must neve
 a real conflict (see the mid-segment-wildcard fix in Task 3 of this plan, which
 tightened this guarantee after an initial gap). Leases are acquired when a task enters
 `running` (not `claimed`, which can be released without ever touching a file), have a
-15-minute TTL renewed by the owning worker, and are released on task completion,
+15-minute TTL. `LeaseRepository.renew()` exists at the persistence layer but v0 exposes
+no MCP tool or CLI surface for a worker to actually call it — a long-running task's
+lease is not renewed and can expire before the task finishes; `SwarmService.swarmNext`
+stays safe regardless, since it unions real active leases with the paths of every
+`claimed`/`running` task when computing conflicts, so an expired-but-still-in-progress
+lease's path is not handed out to a second task even after expiry. A dedicated renewal
+tool is a natural, small follow-up, not implemented in this pass. Leases are released
+on task completion,
 failure, or a `SubagentStop`/`SessionEnd` hook firing for an orphaned owner. The
 scheduler (`Scheduler.scheduleNext`) sets `needsWorktree: true` on a `SpawnRequest`
 batch only when it selects two or more path-writing tasks together in the same tick —
