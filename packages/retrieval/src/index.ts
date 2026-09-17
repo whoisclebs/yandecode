@@ -21,3 +21,12 @@ export { diffScan, scanRepository, type DiffResult, type ExistingDoc, type Scann
 export { generationFileName, listGenerations, removeOtherGenerations } from './vector/generations.js';
 export type { VectorHit, VectorIndex, VectorIndexStats, VectorRecord } from './vector/types.js';
 export { USearchVectorIndex, type USearchVectorIndexOptions } from './vector/usearch-index.js';
+export {
+  IndexingService,
+  type IndexingServiceDeps,
+  type IndexMode,
+  type IndexProgress,
+  type IndexReport,
+  type IndexRunOptions,
+  type IndexStatus,
+} from './service/indexing-service.js';
