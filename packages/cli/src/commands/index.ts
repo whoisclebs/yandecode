@@ -4,4 +4,5 @@ import './init.js';
 import './uninstall.js';
 import './doctor.js';
 import './status.js';
+import './hook.js';
 export {};
