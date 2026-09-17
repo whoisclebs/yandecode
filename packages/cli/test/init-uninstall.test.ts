@@ -1,4 +1,11 @@
-import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -81,6 +88,46 @@ describe('runInit', () => {
     expect(third.files.find((f) => f.path === '.claude/agents/yandecode-scout.md')?.action).toBe(
       'updated',
     );
+  });
+
+  it('never adopts a pre-existing user file (no prior manifest entry) as managed content', async () => {
+    const root = tmp();
+    // Simulate a user file that predates any YandeCode manifest, at a path
+    // YandeCode would manage (e.g. after a prior `uninstall` deleted
+    // managed.json, or a first-ever init onto a manually-created file).
+    const scoutPath = join(root, '.claude', 'agents', 'yandecode-scout.md');
+    mkdirSync(join(root, '.claude', 'agents'), { recursive: true });
+    writeFileSync(scoutPath, 'totally user content, not the plugin template');
+
+    const first = await runInit(root, { launcher });
+    expect(first.files.find((f) => f.path === '.claude/agents/yandecode-scout.md')?.action).toBe(
+      'preserved',
+    );
+    expect(readFileSync(scoutPath, 'utf8')).toBe('totally user content, not the plugin template');
+
+    // The manifest must NOT contain this file: there was no previous entry,
+    // so recording its hash would let a later init/uninstall mistake the
+    // user's own content for untouched managed content.
+    const manifestAfterFirst = readJson(join(root, '.yandecode', 'managed.json')) as {
+      files: { path: string }[];
+    };
+    expect(
+      manifestAfterFirst.files.some((f) => f.path === '.claude/agents/yandecode-scout.md'),
+    ).toBe(false);
+
+    // Running init again must still preserve the user's file, not silently
+    // overwrite it as 'updated'.
+    const second = await runInit(root, { launcher });
+    expect(second.files.find((f) => f.path === '.claude/agents/yandecode-scout.md')?.action).toBe(
+      'preserved',
+    );
+    expect(readFileSync(scoutPath, 'utf8')).toBe('totally user content, not the plugin template');
+
+    // Uninstall must not delete the user's file either.
+    const report = await runUninstall(root);
+    expect(existsSync(scoutPath)).toBe(true);
+    expect(readFileSync(scoutPath, 'utf8')).toBe('totally user content, not the plugin template');
+    expect(report.removed).not.toContain('.claude/agents/yandecode-scout.md');
   });
 });
 

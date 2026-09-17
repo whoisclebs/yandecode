@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { resolveInsideRoot, sha256, workspacePathsFor, writeFileAtomic } from '@yandecode/core';
 import { removeBlock } from './claude-md.js';
 import { removeGitignoreEntry } from './gitignore.js';
+import { readJsonSafe } from './json-utils.js';
 import { readManifest } from './manifest.js';
 import { removeMcpServer } from './mcp-config.js';
 import { removeHooks } from './settings.js';
@@ -50,18 +51,23 @@ export function runUninstall(
 
   const settingsFile = join(root, '.claude', 'settings.json');
   if (existsSync(settingsFile)) {
-    const next = removeHooks(
-      JSON.parse(readFileSync(settingsFile, 'utf8')) as Record<string, unknown>,
-    );
-    writeFileAtomic(settingsFile, `${JSON.stringify(next, null, 2)}\n`);
+    // A malformed settings.json must not abort the rest of uninstall (which
+    // still has CLAUDE.md/.gitignore/yandecode.json cleanup to do): skip
+    // rewriting this one file rather than throwing.
+    const parsed = readJsonSafe<Record<string, unknown> | null>(settingsFile, null);
+    if (parsed) {
+      const next = removeHooks(parsed);
+      writeFileAtomic(settingsFile, `${JSON.stringify(next, null, 2)}\n`);
+    }
   }
 
   const mcpFile = join(root, '.mcp.json');
   if (existsSync(mcpFile)) {
-    const next = removeMcpServer(
-      JSON.parse(readFileSync(mcpFile, 'utf8')) as Record<string, unknown>,
-    );
-    writeFileAtomic(mcpFile, `${JSON.stringify(next, null, 2)}\n`);
+    const parsed = readJsonSafe<Record<string, unknown> | null>(mcpFile, null);
+    if (parsed) {
+      const next = removeMcpServer(parsed);
+      writeFileAtomic(mcpFile, `${JSON.stringify(next, null, 2)}\n`);
+    }
   }
 
   const claudeMd = join(root, 'CLAUDE.md');

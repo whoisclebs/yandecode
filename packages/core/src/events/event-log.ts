@@ -18,4 +18,8 @@ export class EventLog {
     appendFileSync(this.logFile, `${JSON.stringify(rec)}\n`, 'utf8');
     return rec;
   }
+
+  recent(limit: number): EventRecord[] {
+    return this.events.recent(limit);
+  }
 }

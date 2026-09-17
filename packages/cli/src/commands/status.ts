@@ -21,9 +21,7 @@ registerCommand((program) => {
           `Repository index     ${counts.documents} documents, ${counts.chunks} chunks, generation ${meta?.generation ?? 0}\n`,
         );
         process.stdout.write(`Dirty files          ${dirty}\n`);
-        const recent = rt.state.read((db) =>
-          db.prepare('SELECT ts, event FROM events ORDER BY ts DESC LIMIT 5').all(),
-        ) as { ts: string; event: string }[];
+        const recent = rt.events.recent(5);
         process.stdout.write('Recent events\n');
         for (const e of recent) process.stdout.write(`  ${e.ts}  ${e.event}\n`);
       } finally {

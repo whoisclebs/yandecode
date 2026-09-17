@@ -12,6 +12,7 @@ import { loadPluginContent } from '../plugin-content.js';
 import { VERSION } from '../version.js';
 import { claudeMdBlock, upsertBlock } from './claude-md.js';
 import { ensureGitignoreEntry } from './gitignore.js';
+import { readJsonSafe } from './json-utils.js';
 import { readManifest, writeManifest, type ManagedFile } from './manifest.js';
 import { materializeFile, type MaterializeResult } from './materialize.js';
 import { addMcpServer } from './mcp-config.js';
@@ -30,11 +31,6 @@ export interface InitReport {
   mcpUpdated: boolean;
   claudeMdUpdated: boolean;
   gitignoreUpdated: boolean;
-}
-
-function readJsonOr(file: string, fallback: Record<string, unknown>): Record<string, unknown> {
-  if (!existsSync(file)) return fallback;
-  return JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
 }
 
 function writeJsonIfChanged(file: string, next: Record<string, unknown>): boolean {
@@ -82,11 +78,11 @@ export function runInit(cwd: string, options: InitOptions = {}): Promise<InitRep
   const entries = hookEntriesFor(launcher, JSON.parse(readFileSync(plugin.hooksFile, 'utf8')));
   const settingsUpdated = writeJsonIfChanged(
     settingsFile,
-    mergeHooks(readJsonOr(settingsFile, {}), entries),
+    mergeHooks(readJsonSafe(settingsFile, {}), entries),
   );
 
   const mcpFile = join(root, '.mcp.json');
-  const mcpUpdated = writeJsonIfChanged(mcpFile, addMcpServer(readJsonOr(mcpFile, {}), launcher));
+  const mcpUpdated = writeJsonIfChanged(mcpFile, addMcpServer(readJsonSafe(mcpFile, {}), launcher));
 
   const claudeMd = join(root, 'CLAUDE.md');
   const claudeMdUpdated = writeTextIfChanged(
@@ -103,12 +99,25 @@ export function runInit(cwd: string, options: InitOptions = {}): Promise<InitRep
     ),
   );
 
+  const manifestFiles: ManagedFile[] = [];
+  for (const f of files) {
+    if (f.action === 'preserved') {
+      // A preserved file with no previous manifest entry has no known "managed"
+      // content hash to record: f.hash here is the USER'S OWN content hash, and
+      // recording it would make a later init/uninstall mistake the user's edit
+      // for untouched managed content (see Fix 2 regression test). Omit it so
+      // the next run again sees `previous === undefined` and treats it as
+      // unmanaged/preserved, exactly like today.
+      const prev = prevByPath.get(f.path);
+      if (prev) manifestFiles.push({ path: f.path, hash: prev.hash });
+      continue;
+    }
+    manifestFiles.push({ path: f.path, hash: f.hash });
+  }
+
   writeManifest(paths.managedManifest, {
     version: VERSION,
-    files: files.map((f) => ({
-      path: f.path,
-      hash: f.action === 'preserved' ? (prevByPath.get(f.path)?.hash ?? f.hash) : f.hash,
-    })),
+    files: manifestFiles,
   });
 
   return Promise.resolve({

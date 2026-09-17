@@ -13,7 +13,13 @@ export type ManagedManifest = z.infer<typeof ManifestSchema>;
 
 export function readManifest(file: string): ManagedManifest | null {
   if (!existsSync(file)) return null;
-  const parsed = ManifestSchema.safeParse(JSON.parse(readFileSync(file, 'utf8')));
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(file, 'utf8'));
+  } catch {
+    return null;
+  }
+  const parsed = ManifestSchema.safeParse(raw);
   return parsed.success ? parsed.data : null;
 }
 

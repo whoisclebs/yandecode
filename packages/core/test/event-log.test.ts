@@ -23,4 +23,17 @@ describe('EventLog', () => {
     expect(lines[1]?.agent).toBe('scout');
     expect(events.recent(5)).toHaveLength(2);
   });
+
+  it('recent() delegates to the underlying EventRepository, most-recent-first', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'yc-evlog-recent-'));
+    const file = join(dir, 'logs', 'events.jsonl');
+    const state = StateService.open(':memory:');
+    const events = new EventRepository(state);
+    const log = new EventLog(events, file);
+    await log.emit({ event: 'first' });
+    await log.emit({ event: 'second' });
+    await log.emit({ event: 'third' });
+    expect(log.recent(2).map((e) => e.event)).toEqual(['third', 'second']);
+    expect(log.recent(5)).toEqual(events.recent(5));
+  });
 });

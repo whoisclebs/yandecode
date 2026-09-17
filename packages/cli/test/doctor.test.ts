@@ -75,6 +75,39 @@ describe('runDoctor', () => {
     expect(byName(results, 'Managed files').detail).toContain('yandecode-scout.md');
   });
 
+  it('reports a failed Hooks check instead of throwing on malformed .claude/settings.json', async () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'yc-doc-badjson-'));
+    await runInit(cwd, { launcher: { command: 'yandecode', args: [] } });
+    writeFileSync(join(cwd, '.claude', 'settings.json'), '{ not valid json');
+    const results = runDoctor({
+      cwd,
+      probeVersion: probeAllOk,
+      nodeVersion: 'v22.22.3',
+      yandecodeVersion: '0.1.0',
+    });
+    expect(byName(results, 'Hooks').status).toBe('fail');
+    expect(byName(results, 'Hooks').detail).toContain('malformed JSON');
+    expect(byName(results, 'Hooks').fix).toBeDefined();
+    // Every other check still ran; a bad settings.json must not crash doctor.
+    expect(byName(results, 'MCP').status).toBe('ok');
+  });
+
+  it('reports a failed MCP check instead of throwing on malformed .mcp.json', async () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'yc-doc-badmcp-'));
+    await runInit(cwd, { launcher: { command: 'yandecode', args: [] } });
+    writeFileSync(join(cwd, '.mcp.json'), '{ not valid json');
+    const results = runDoctor({
+      cwd,
+      probeVersion: probeAllOk,
+      nodeVersion: 'v22.22.3',
+      yandecodeVersion: '0.1.0',
+    });
+    expect(byName(results, 'MCP').status).toBe('fail');
+    expect(byName(results, 'MCP').detail).toContain('malformed JSON');
+    expect(byName(results, 'MCP').fix).toBeDefined();
+    expect(byName(results, 'Hooks').status).toBe('ok');
+  });
+
   it('formats aligned output with fix lines', () => {
     const text = formatDoctor([
       { name: 'Claude Code', status: 'ok', detail: '2.1.273' },

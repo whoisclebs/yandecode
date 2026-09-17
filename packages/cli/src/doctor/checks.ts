@@ -11,6 +11,7 @@ import {
   sha256,
 } from '@yandecode/core';
 import { CLAUDE_MD_START } from '../integration/claude-md.js';
+import { isMalformedJson, readJsonSafe } from '../integration/json-utils.js';
 import { readManifest } from '../integration/manifest.js';
 import { HOOK_EVENTS } from '../plugin-content.js';
 
@@ -151,36 +152,50 @@ export function runDoctor(deps: DoctorDeps): CheckResult[] {
   }
 
   const settingsFile = join(paths.root, '.claude', 'settings.json');
-  const settings = existsSync(settingsFile)
-    ? (JSON.parse(readFileSync(settingsFile, 'utf8')) as { hooks?: Record<string, unknown[]> })
-    : {};
-  const hookText = JSON.stringify(settings.hooks ?? {});
-  const missingHooks = HOOK_EVENTS.filter((e) => !hookText.includes(`yandecode hook ${e}`));
-  results.push(
-    missingHooks.length === 0
-      ? { name: 'Hooks', status: 'ok', detail: HOOK_EVENTS.join(', ') }
-      : {
-          name: 'Hooks',
-          status: 'fail',
-          detail: `missing: ${missingHooks.join(', ')}`,
-          fix: INIT_FIX,
-        },
-  );
+  if (isMalformedJson(settingsFile)) {
+    results.push({
+      name: 'Hooks',
+      status: 'fail',
+      detail: `malformed JSON: ${settingsFile}`,
+      fix: 'fix the JSON syntax in .claude/settings.json or delete it and run yandecode init',
+    });
+  } else {
+    const settings = readJsonSafe<{ hooks?: Record<string, unknown[]> }>(settingsFile, {});
+    const hookText = JSON.stringify(settings.hooks ?? {});
+    const missingHooks = HOOK_EVENTS.filter((e) => !hookText.includes(`yandecode hook ${e}`));
+    results.push(
+      missingHooks.length === 0
+        ? { name: 'Hooks', status: 'ok', detail: HOOK_EVENTS.join(', ') }
+        : {
+            name: 'Hooks',
+            status: 'fail',
+            detail: `missing: ${missingHooks.join(', ')}`,
+            fix: INIT_FIX,
+          },
+    );
+  }
 
   const mcpFile = join(paths.root, '.mcp.json');
-  const mcp = existsSync(mcpFile)
-    ? (JSON.parse(readFileSync(mcpFile, 'utf8')) as { mcpServers?: Record<string, unknown> })
-    : {};
-  results.push(
-    mcp.mcpServers?.yandecode
-      ? { name: 'MCP', status: 'ok', detail: 'yandecode server registered in .mcp.json' }
-      : {
-          name: 'MCP',
-          status: 'fail',
-          detail: 'yandecode server missing from .mcp.json',
-          fix: INIT_FIX,
-        },
-  );
+  if (isMalformedJson(mcpFile)) {
+    results.push({
+      name: 'MCP',
+      status: 'fail',
+      detail: `malformed JSON: ${mcpFile}`,
+      fix: 'fix the JSON syntax in .mcp.json or delete it and run yandecode init',
+    });
+  } else {
+    const mcp = readJsonSafe<{ mcpServers?: Record<string, unknown> }>(mcpFile, {});
+    results.push(
+      mcp.mcpServers?.yandecode
+        ? { name: 'MCP', status: 'ok', detail: 'yandecode server registered in .mcp.json' }
+        : {
+            name: 'MCP',
+            status: 'fail',
+            detail: 'yandecode server missing from .mcp.json',
+            fix: INIT_FIX,
+          },
+    );
+  }
 
   const claudeMd = join(paths.root, 'CLAUDE.md');
   results.push(

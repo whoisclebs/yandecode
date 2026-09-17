@@ -28,6 +28,13 @@ describe('manifest', () => {
       files: [{ path: '.claude/agents/x.md', hash: 'h' }],
     });
   });
+
+  it('returns null (does not throw) when the manifest file contains malformed JSON', () => {
+    const file = join(tmp(), 'managed.json');
+    writeFileSync(file, '{ this is not valid json');
+    expect(() => readManifest(file)).not.toThrow();
+    expect(readManifest(file)).toBeNull();
+  });
 });
 
 describe('materializeFile', () => {
