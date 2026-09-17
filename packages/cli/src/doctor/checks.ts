@@ -16,6 +16,7 @@ import {
   resolveModelCacheDir,
   USearchVectorIndex,
 } from '@yandecode/retrieval';
+import { resolveClaudeBin } from '../claude-bin.js';
 import { CLAUDE_MD_START } from '../integration/claude-md.js';
 import { isMalformedJson, readJsonSafe } from '../integration/json-utils.js';
 import { readManifest } from '../integration/manifest.js';
@@ -138,7 +139,7 @@ export function runDoctor(deps: DoctorDeps): CheckResult[] {
   results.push(
     toolCheck(
       'Claude Code',
-      'claude',
+      resolveClaudeBin(),
       deps.probeVersion,
       'install Claude Code: https://code.claude.com/docs/en/setup',
     ),

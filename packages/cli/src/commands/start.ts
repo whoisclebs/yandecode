@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { resolveClaudeBin } from '../claude-bin.js';
 import { registerCommand } from '../cli.js';
 import { openRuntime } from '../context.js';
 import { defaultProbeVersion, doctorExitCode, formatDoctor, runDoctor } from '../doctor/checks.js';
@@ -6,10 +7,6 @@ import { createRetrieval } from '../retrieval-runtime.js';
 import { VERSION } from '../version.js';
 
 const DANGEROUS_FLAG = '--dangerously-skip-permissions';
-
-export function resolveClaudeBin(): string {
-  return process.env.YANDECODE_CLAUDE_BIN ?? 'claude';
-}
 
 export interface StartResult {
   exitCode: number;
