@@ -49,6 +49,7 @@ export class MemoryService {
   async store(input: MemoryStoreInput): Promise<MemoryStoreResult> {
     const policy = evaluateWritePolicy({
       content: input.content,
+      summary: input.summary,
       evidence: input.evidence,
       confidence: input.confidence,
     });
@@ -78,6 +79,7 @@ export class MemoryService {
       namespace: input.namespace,
       content: input.content,
       summary: input.summary,
+      evidence: input.evidence,
       sourceSwarmId: input.sourceSwarmId,
       sourceTaskId: input.sourceTaskId,
       confidence: input.confidence,

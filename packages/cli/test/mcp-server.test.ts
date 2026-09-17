@@ -84,7 +84,7 @@ describe('MCP server', () => {
     const tools = (await client.listTools()).tools.map((t) => t.name).sort();
     expect(tools).toContain('rag_search');
     expect(tools).toContain('rag_status');
-    expect(tools).toHaveLength(15);
+    expect(tools).toHaveLength(16);
     await close();
   });
 
@@ -170,11 +170,12 @@ describe('MCP server', () => {
 });
 
 describe('swarm/task/message/workspace/memory MCP tools', () => {
-  it('exposes all 15 v0 tools once swarm and memory deps are wired', async () => {
+  it('exposes all 16 v0 tools once swarm and memory deps are wired', async () => {
     const { client, close } = await connect(undefined, undefined, true);
     const tools = (await client.listTools()).tools.map((t) => t.name).sort();
     expect(tools).toEqual(
       [
+        'memory_feedback',
         'memory_search',
         'memory_store',
         'message_read',
@@ -390,6 +391,27 @@ describe('swarm/task/message/workspace/memory MCP tools', () => {
     const hits = JSON.parse(searched.content[0]!.text) as { id: string }[];
     expect(hits.map((h) => h.id)).toContain(parsedStored.memory!.id);
 
+    const feedback = (await client.callTool({
+      name: 'memory_feedback',
+      arguments: { memoryId: parsedStored.memory!.id, verdict: 'helpful' },
+    })) as { content: { text: string }[] };
+    const parsedFeedback = JSON.parse(feedback.content[0]!.text) as { feedbackId: string };
+    expect(typeof parsedFeedback.feedbackId).toBe('string');
+    expect(parsedFeedback.feedbackId.length).toBeGreaterThan(0);
+
+    const searchedAgain = (await client.callTool({
+      name: 'memory_search',
+      arguments: {
+        query: 'retry idle connections with exponential backoff',
+        namespace: 'patterns',
+      },
+    })) as { content: { text: string }[] };
+    const hitAfterFeedback = (
+      JSON.parse(searchedAgain.content[0]!.text) as { id: string; confidence: number }[]
+    ).find((h) => h.id === parsedStored.memory!.id);
+    // 'helpful' bumps confidence by +0.1 (see MemoryService.feedback); started at 0.7.
+    expect(hitAfterFeedback?.confidence).toBeCloseTo(0.8, 10);
+
     await close();
   });
 
@@ -399,6 +421,11 @@ describe('swarm/task/message/workspace/memory MCP tools', () => {
       isError?: boolean;
     };
     expect(r.isError).toBe(true);
+    const feedbackResult = (await client.callTool({
+      name: 'memory_feedback',
+      arguments: { memoryId: 'whatever', verdict: 'helpful' },
+    })) as { isError?: boolean };
+    expect(feedbackResult.isError).toBe(true);
     await close();
   });
 });

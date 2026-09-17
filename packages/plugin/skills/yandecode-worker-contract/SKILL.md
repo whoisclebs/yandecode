@@ -19,7 +19,7 @@ If your task carries `paths` (you'll write files), reserve them before touching 
 
 ## 3. Orient
 
-`memory_search` your task's own title/description for prior decisions, patterns, solutions or failures in this area, and `rag_search` for the code itself. Both are leads, not authority — `Read` before relying on either, per `yandecode-context-rules`.
+`memory_search` your task's own title/description for prior decisions, patterns, solutions or failures in this area, and `rag_search` for the code itself. Both are leads, not authority — `Read` before relying on either, per `yandecode-context-rules`. If a memory you found genuinely helped or turned out wrong/stale once you acted on it, `memory_feedback({ memoryId, verdict })` before you finish — this is what actually adjusts its confidence for the next search; storing a memory never updates an existing one's confidence on its own.
 
 ## 4. Work
 

@@ -108,6 +108,7 @@ describe('MemoryService.store', () => {
     expect(result.status).toBe('stored');
     if (result.status === 'stored') {
       expect(index.contains(result.memory.vectorId)).toBe(true);
+      expect(result.memory.evidence).toBe('task-1');
     }
     state.close();
   });
@@ -124,6 +125,22 @@ describe('MemoryService.store', () => {
       evidence: null,
     });
     expect(result).toEqual({ status: 'rejected', reason: 'no evidence provided' });
+    expect(index.stats().size).toBe(0);
+    state.close();
+  });
+
+  it('rejects storage when a secret is embedded only in summary, even with clean content', async () => {
+    const { state, index, service } = await setup();
+    const result = await service.store({
+      namespace: 'patterns',
+      content: 'a clean, secret-free description of the pattern',
+      summary: 'api_key: "sk-ab12cd34ef56gh78ij90"',
+      sourceSwarmId: null,
+      sourceTaskId: null,
+      confidence: 0.6,
+      evidence: 'task-1',
+    });
+    expect(result).toEqual({ status: 'rejected', reason: 'content matches a secret-like pattern' });
     expect(index.stats().size).toBe(0);
     state.close();
   });

@@ -407,5 +407,29 @@ export function createMcpServer(deps: McpDeps): McpServer {
     },
   );
 
+  server.registerTool(
+    'memory_feedback',
+    {
+      description:
+        "Report whether a previously-retrieved memory was helpful, wrong, or stale - adjusts its confidence for future searches. This is what closes the learning loop: memory_store alone never updates a memory's confidence.",
+      inputSchema: {
+        memoryId: z.string().min(1),
+        verdict: z.enum(['helpful', 'wrong', 'stale']),
+        taskId: z.string().optional(),
+        note: z.string().max(1000).optional(),
+      },
+    },
+    async ({ memoryId, verdict, taskId, note }) => {
+      if (!deps.memoryService) return unavailable(MEMORY_NOT_AVAILABLE);
+      const result = await deps.memoryService.feedback({
+        memoryId,
+        verdict,
+        taskId: taskId ?? null,
+        note: note ?? null,
+      });
+      return jsonResult(result);
+    },
+  );
+
   return server;
 }

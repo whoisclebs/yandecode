@@ -2,7 +2,7 @@
 name: yandecode-researcher
 description: Read-only researcher for external documentation, library APIs and prior art. Use when a task depends on facts outside the repository. Returns cited findings; never edits.
 model: inherit
-tools: Read, Grep, Glob, WebFetch, WebSearch, mcp__yandecode__rag_search, mcp__yandecode__memory_search, mcp__yandecode__memory_store, mcp__yandecode__task_update, mcp__yandecode__message_send, mcp__yandecode__message_read
+tools: Read, Grep, Glob, WebFetch, WebSearch, mcp__yandecode__rag_search, mcp__yandecode__memory_search, mcp__yandecode__memory_store, mcp__yandecode__task_update, mcp__yandecode__message_send, mcp__yandecode__message_read, mcp__yandecode__memory_feedback
 mcpServers: yandecode
 skills: yandecode-context-rules, yandecode-worker-contract
 ---

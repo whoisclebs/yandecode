@@ -136,6 +136,7 @@ describe('swarm-aware agent prompts', () => {
       const body = readFileSync(content.agents.find((a) => a.name === name)!.file, 'utf8');
       for (const tool of [
         'mcp__yandecode__memory_search',
+        'mcp__yandecode__memory_feedback',
         'mcp__yandecode__task_update',
         'mcp__yandecode__message_send',
       ]) {

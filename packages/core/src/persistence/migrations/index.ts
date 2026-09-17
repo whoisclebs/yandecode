@@ -3,6 +3,7 @@ import { up as initial } from './0001-initial.js';
 import { up as chunkEmbeddings } from './0002-chunk-embeddings.js';
 import { up as swarmMemory } from './0003-swarm-memory.js';
 import { up as memoryEmbeddings } from './0004-memory-embeddings.js';
+import { up as memoryEvidence } from './0005-memory-evidence.js';
 
 export interface Migration {
   version: number;
@@ -15,6 +16,7 @@ export const MIGRATIONS: readonly Migration[] = [
   { version: 2, name: 'chunk-embeddings', up: chunkEmbeddings },
   { version: 3, name: 'swarm-memory', up: swarmMemory },
   { version: 4, name: 'memory-embeddings', up: memoryEmbeddings },
+  { version: 5, name: 'memory-evidence', up: memoryEvidence },
 ];
 
 export const SCHEMA_VERSION: number = MIGRATIONS[MIGRATIONS.length - 1]?.version ?? 0;

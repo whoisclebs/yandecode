@@ -15,6 +15,7 @@ function input(overrides: Partial<MemoryInput> = {}): MemoryInput {
     content:
       'Use StateService.write for every mutation, never touch db directly outside a repository.',
     summary: 'Serialize writes through StateService',
+    evidence: 'task-origin-1',
     sourceSwarmId: null,
     sourceTaskId: null,
     confidence: 0.6,
@@ -43,6 +44,12 @@ describe('MemoryRepository', () => {
     expect(rec.namespace).toBe('patterns');
     expect(rec.usageCount).toBe(0);
     expect(rec.confidence).toBeCloseTo(0.6, 10);
+    expect(rec.evidence).toBe('task-origin-1');
+  });
+
+  it('round-trips a null evidence value', async () => {
+    const rec = await repo.create(input({ evidence: null }));
+    expect(repo.get(rec.id)?.evidence).toBeNull();
   });
 
   it('allocates monotonically increasing vector ids across creates', async () => {

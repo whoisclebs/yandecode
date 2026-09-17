@@ -10,6 +10,7 @@ export interface MemoryInput {
   namespace: MemoryNamespace;
   content: string;
   summary: string | null;
+  evidence: string | null;
   sourceSwarmId: string | null;
   sourceTaskId: string | null;
   confidence: number;
@@ -22,6 +23,7 @@ export interface MemoryRecord {
   namespace: MemoryNamespace;
   content: string;
   summary: string | null;
+  evidence: string | null;
   sourceSwarmId: string | null;
   sourceTaskId: string | null;
   confidence: number;
@@ -41,6 +43,7 @@ interface MemoryRow {
   namespace: MemoryNamespace;
   content: string;
   summary: string | null;
+  evidence: string | null;
   source_swarm_id: string | null;
   source_task_id: string | null;
   confidence: number;
@@ -56,13 +59,14 @@ interface MemoryRow {
 }
 
 const MEMORY_SELECT =
-  'SELECT id, namespace, content, summary, source_swarm_id, source_task_id, confidence, usage_count, success_count, failure_count, vector_id, content_hash, created_at, updated_at, last_used_at, archived_at FROM memories';
+  'SELECT id, namespace, content, summary, evidence, source_swarm_id, source_task_id, confidence, usage_count, success_count, failure_count, vector_id, content_hash, created_at, updated_at, last_used_at, archived_at FROM memories';
 
 const fromRow = (r: MemoryRow): MemoryRecord => ({
   id: r.id,
   namespace: r.namespace,
   content: r.content,
   summary: r.summary,
+  evidence: r.evidence,
   sourceSwarmId: r.source_swarm_id,
   sourceTaskId: r.source_task_id,
   confidence: r.confidence,
@@ -95,13 +99,14 @@ export class MemoryRepository {
       const id = newId();
       const now = nowIso();
       db.prepare(
-        `INSERT INTO memories (id, namespace, content, summary, source_swarm_id, source_task_id, confidence, usage_count, success_count, failure_count, vector_id, content_hash, embedding, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, ?, ?, ?)`,
+        `INSERT INTO memories (id, namespace, content, summary, evidence, source_swarm_id, source_task_id, confidence, usage_count, success_count, failure_count, vector_id, content_hash, embedding, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, ?, ?, ?)`,
       ).run(
         id,
         input.namespace,
         input.content,
         input.summary,
+        input.evidence,
         input.sourceSwarmId,
         input.sourceTaskId,
         input.confidence,
@@ -116,6 +121,7 @@ export class MemoryRepository {
         namespace: input.namespace,
         content: input.content,
         summary: input.summary,
+        evidence: input.evidence,
         sourceSwarmId: input.sourceSwarmId,
         sourceTaskId: input.sourceTaskId,
         confidence: input.confidence,

@@ -110,4 +110,13 @@ describe('migrations', () => {
     );
     expect(cols).toContain('embedding');
   });
+
+  it('migration 0005 adds the memories.evidence column', () => {
+    const db = openDatabase(':memory:');
+    runMigrations(db);
+    const cols = (db.prepare('PRAGMA table_info(memories)').all() as { name: string }[]).map(
+      (c) => c.name,
+    );
+    expect(cols).toContain('evidence');
+  });
 });

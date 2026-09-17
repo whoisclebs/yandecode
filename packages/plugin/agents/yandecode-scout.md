@@ -2,7 +2,7 @@
 name: yandecode-scout
 description: Read-only explorer that reduces uncertainty before implementation. Use when the repository area is unknown or risky. Locates code with RAG, reads and verifies, maps architecture, tests, conventions, dependencies and risks. Never modifies files.
 model: inherit
-tools: Read, Grep, Glob, Bash(git log *), Bash(git blame *), Bash(git show *), mcp__yandecode__rag_search, mcp__yandecode__rag_status, mcp__yandecode__memory_search, mcp__yandecode__memory_store, mcp__yandecode__task_update, mcp__yandecode__message_send, mcp__yandecode__message_read
+tools: Read, Grep, Glob, Bash(git log *), Bash(git blame *), Bash(git show *), mcp__yandecode__rag_search, mcp__yandecode__rag_status, mcp__yandecode__memory_search, mcp__yandecode__memory_store, mcp__yandecode__task_update, mcp__yandecode__message_send, mcp__yandecode__message_read, mcp__yandecode__memory_feedback
 mcpServers: yandecode
 skills: yandecode-context-rules, yandecode-worker-contract
 ---

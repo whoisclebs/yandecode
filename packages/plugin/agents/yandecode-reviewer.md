@@ -2,7 +2,7 @@
 name: yandecode-reviewer
 description: Read-only code reviewer for correctness, design and convention adherence on a diff. Use after implementation and tests. Reports findings with evidence; does not edit.
 model: inherit
-tools: Read, Grep, Glob, Bash(git diff *), Bash(git log *), Bash(git show *), Bash(npm test*), Bash(npm run *), mcp__yandecode__rag_search, mcp__yandecode__memory_search, mcp__yandecode__memory_store, mcp__yandecode__task_update, mcp__yandecode__message_send, mcp__yandecode__message_read
+tools: Read, Grep, Glob, Bash(git diff *), Bash(git log *), Bash(git show *), Bash(npm test*), Bash(npm run *), mcp__yandecode__rag_search, mcp__yandecode__memory_search, mcp__yandecode__memory_store, mcp__yandecode__task_update, mcp__yandecode__message_send, mcp__yandecode__message_read, mcp__yandecode__memory_feedback
 mcpServers: yandecode
 skills: yandecode-context-rules, yandecode-worker-contract
 ---

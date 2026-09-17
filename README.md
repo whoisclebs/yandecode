@@ -146,9 +146,10 @@ or anything you've edited since; `--purge` also deletes `.yandecode/`.
 - `.claude/agents/yandecode-*.md` — dispatcher, scout, implementer, tester, reviewer, security, researcher
 - `.claude/skills/yandecode-*/SKILL.md` — context rules and delegation protocol
 - `.claude/settings.json` — `SessionStart`, `PostToolUse`, `SessionEnd` hooks calling `yandecode hook`
-- `.mcp.json` — the `yandecode` MCP server: 15 tools — `rag_search`/`rag_status`;
+- `.mcp.json` — the `yandecode` MCP server: 16 tools — `rag_search`/`rag_status`;
   `swarm_create`/`swarm_status`/`swarm_next`/`swarm_cancel`; `task_create`/`task_list`/`task_update`;
-  `message_send`/`message_read`; `workspace_reserve`/`workspace_release`; `memory_store`/`memory_search`
+  `message_send`/`message_read`; `workspace_reserve`/`workspace_release`;
+  `memory_store`/`memory_search`/`memory_feedback`
 - `CLAUDE.md` — a marked block explaining how to use retrieval
 - `.yandecode/` — local state (gitignored); `yandecode.json` — shareable config
 

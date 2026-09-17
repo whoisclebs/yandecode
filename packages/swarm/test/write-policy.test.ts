@@ -109,4 +109,29 @@ describe('evaluateWritePolicy', () => {
     });
     expect(result.allowed).toBe(false);
   });
+
+  it('rejects a secret embedded only in summary, even when content itself is clean', () => {
+    const result = evaluateWritePolicy({
+      content: 'a clean, secret-free description of the pattern',
+      summary: 'api_key: "sk-ab12cd34ef56gh78ij90"',
+      evidence: 'task-1',
+      confidence: 0.5,
+    });
+    expect(result).toEqual({ allowed: false, reason: 'content matches a secret-like pattern' });
+  });
+
+  it('allows a null or omitted summary alongside clean content', () => {
+    expect(
+      evaluateWritePolicy({
+        content: 'a useful fact',
+        summary: null,
+        evidence: 'task-1',
+        confidence: 0.5,
+      }).allowed,
+    ).toBe(true);
+    expect(
+      evaluateWritePolicy({ content: 'a useful fact', evidence: 'task-1', confidence: 0.5 })
+        .allowed,
+    ).toBe(true);
+  });
 });

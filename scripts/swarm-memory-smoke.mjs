@@ -19,7 +19,7 @@ try {
   const { writeFileSync } = await import('node:fs');
   writeFileSync(join(dir, 'yandecode.json'), '{}');
   const rt = openRuntime(dir);
-  const { swarmService, memoryService, memoryRetriever } = createSwarmRuntime(rt);
+  const { swarmService, memoryService, memoryRetriever } = await createSwarmRuntime(rt);
 
   const swarm = await swarmService.createSwarm({
     title: 'Smoke test',
