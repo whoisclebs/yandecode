@@ -40,4 +40,14 @@ describe('evaluateWritePolicy', () => {
     expect(evaluateWritePolicy({ content: 'api_key: "sk-ab12cd34ef56gh78ij90"', evidence: 'task-1', confidence: 0.5 }).allowed).toBe(false);
     expect(evaluateWritePolicy({ content: 'password = "hunter2hunter2hunter2"', evidence: 'task-1', confidence: 0.5 }).allowed).toBe(false);
   });
+
+  it('rejects content containing a SECRET_KEY-style assignment', () => {
+    expect(evaluateWritePolicy({ content: 'SECRET_KEY = "abcdefghijklmnop123"', evidence: 'task-1', confidence: 0.5 }).allowed).toBe(false);
+    expect(evaluateWritePolicy({ content: 'secret_key: "wJalrXUtnFEMIK7MDENGbPxRfiCY"', evidence: 'task-1', confidence: 0.5 }).allowed).toBe(false);
+  });
+
+  it('rejects content containing an AWS temporary session credential (ASIA prefix)', () => {
+    const result = evaluateWritePolicy({ content: 'the token was ASIAABCDEFGHIJKLMNOP in the logs', evidence: 'task-1', confidence: 0.5 });
+    expect(result.allowed).toBe(false);
+  });
 });

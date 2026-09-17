@@ -55,10 +55,16 @@ export class MemoryService {
     if (exact) return { status: 'duplicate', existing: exact };
 
     const embedding = await this.deps.provider.embedDocument(input.content);
-    const nearest = this.deps.index.search(embedding, 1)[0];
-    if (nearest && nearest.score >= NEAR_DUPLICATE_THRESHOLD) {
-      const existing = this.deps.memories.byVectorIds([nearest.id])[0];
-      if (existing) return { status: 'duplicate', existing };
+    const nearCandidates = this.deps.index.search(embedding, 5).filter((c) => c.score >= NEAR_DUPLICATE_THRESHOLD);
+    if (nearCandidates.length > 0) {
+      const records = this.deps.memories.byVectorIds(nearCandidates.map((c) => c.id));
+      const byVectorId = new Map(records.map((r) => [r.vectorId, r]));
+      for (const candidate of nearCandidates) {
+        const existing = byVectorId.get(candidate.id);
+        if (existing && existing.namespace === input.namespace) {
+          return { status: 'duplicate', existing };
+        }
+      }
     }
 
     const memory = await this.deps.memories.create({

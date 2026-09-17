@@ -2,8 +2,8 @@ export const MAX_MEMORY_CONTENT_CHARS = 4000;
 
 const CONTENT_SECRET_PATTERNS: RegExp[] = [
   /-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/,
-  /AKIA[0-9A-Z]{16}/,
-  /(?:api[_-]?key|secret|token|password)\s*[:=]\s*['"]?[A-Za-z0-9_-]{12,}['"]?/i,
+  /(?:AKIA|ASIA)[0-9A-Z]{16}/,
+  /(?:api[_-]?key|secret[_-]?key|secret|token|password)\s*[:=]\s*['"]?[A-Za-z0-9_-]{12,}['"]?/i,
 ];
 
 export interface WritePolicyCandidate {

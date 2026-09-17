@@ -121,6 +121,21 @@ describe('MemoryService.store', () => {
     expect(second.status).toBe('stored');
     state.close();
   });
+
+  it('does not flag a near-duplicate in a DIFFERENT namespace as a duplicate, but still does within the same namespace', async () => {
+    const vA = new Float32Array([1, 0, 0]);
+    const vB = new Float32Array([0.96, 0.28, 0]);
+    const vectors = new Map([
+      ['a solution about retries', vA],
+      ['a differently worded failure about retries', vB],
+    ]);
+    const { state, service } = await setup(vectors);
+    const first = await service.store({ namespace: 'solutions', content: 'a solution about retries', summary: null, sourceSwarmId: null, sourceTaskId: null, confidence: 0.5, evidence: 'task-1' });
+    const second = await service.store({ namespace: 'failures', content: 'a differently worded failure about retries', summary: null, sourceSwarmId: null, sourceTaskId: null, confidence: 0.5, evidence: 'task-2' });
+    expect(first.status).toBe('stored');
+    expect(second.status).toBe('stored');
+    state.close();
+  });
 });
 
 describe('MemoryService.feedback', () => {
