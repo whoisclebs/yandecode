@@ -51,6 +51,14 @@ describe('scanRepository (git repository)', () => {
     expect(index.contentHash).toMatch(/^[0-9a-f]{64}$/);
     expect(index.sizeBytes).toBe(Buffer.byteLength('export const a = 1;\n'));
   });
+
+  it('skips a dangling symlink instead of crashing the whole scan', async () => {
+    symlinkSync(join(root, 'does-not-exist.txt'), join(root, 'broken-link.txt'));
+    writeFileSync(join(root, 'real-file.ts'), 'export const x = 1;\n');
+    const scanned = await scanRepository(root);
+    expect(scanned.map((f) => f.relPath)).not.toContain('broken-link.txt');
+    expect(scanned.map((f) => f.relPath)).toContain('real-file.ts');
+  });
 });
 
 describe('scanRepository (no .git directory)', () => {
@@ -60,6 +68,21 @@ describe('scanRepository (no .git directory)', () => {
     const files = await scanRepository(root);
     const relPaths = files.map((f) => f.relPath).sort();
     expect(relPaths).toEqual(['.gitignore', '.yandecodeignore', 'README.md', 'ignored-by-git.txt', 'src/index.ts']);
+  });
+
+  it('excludes files inside DEFAULT_IGNORED_DIRS from both git and non-git scans', async () => {
+    root = mkdtempSync(join(tmpdir(), 'yc-scan-ignored-'));
+    mkdirSync(join(root, 'node_modules', 'some-pkg'), { recursive: true });
+    writeFileSync(join(root, 'node_modules', 'some-pkg', 'index.js'), 'module.exports = {};\n');
+    mkdirSync(join(root, 'dist'), { recursive: true });
+    writeFileSync(join(root, 'dist', 'bundle.js'), 'console.log(1);\n');
+    writeFileSync(join(root, 'kept.ts'), 'export const y = 2;\n');
+
+    const scanned = await scanRepository(root);
+    const paths = scanned.map((f) => f.relPath);
+    expect(paths).not.toEqual(expect.arrayContaining([expect.stringContaining('node_modules')]));
+    expect(paths).not.toEqual(expect.arrayContaining([expect.stringContaining('dist/')]));
+    expect(paths).toContain('kept.ts');
   });
 });
 

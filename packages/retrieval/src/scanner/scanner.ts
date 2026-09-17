@@ -75,7 +75,12 @@ export function listFiles(root: string): string[] {
     const lst = lstatSync(absPath, { throwIfNoEntry: false });
     if (!lst) continue;
     if (lst.isSymbolicLink()) {
-      const real = realpathSync(absPath);
+      let real: string;
+      try {
+        real = realpathSync(absPath);
+      } catch {
+        continue;
+      }
       if (!isInsideRoot(root, real)) continue;
     }
     const st = statSync(absPath, { throwIfNoEntry: false });
