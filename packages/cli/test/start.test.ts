@@ -62,4 +62,13 @@ describe('runStart', () => {
     expect(calls[1]?.argv).toEqual(['--agent', 'yandecode-dispatcher', '--resume']);
     expect(calls[1]?.cwd).toBe(cwd);
   });
+
+  it('exits cleanly with code 1 instead of crashing when the claude binary cannot be found at all', async () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'yc-start-noclaudebin-'));
+    await runInit(cwd, { launcher: { command: 'yandecode', args: [] } });
+    process.env.YANDECODE_CLAUDE_BIN = '/definitely/does/not/exist/claude';
+    process.env.YANDECODE_EMBEDDINGS = 'hash';
+
+    await expect(runStart(cwd, [])).resolves.toEqual({ exitCode: 1 });
+  });
 });

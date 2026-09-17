@@ -28,35 +28,41 @@ export async function runStart(cwd: string, passthrough: string[]): Promise<Star
   }
 
   const rt = openRuntime(cwd);
-  const retrieval = createRetrieval(rt);
   try {
-    await retrieval.indexing.run({
-      mode: 'incremental',
-      onProgress: (p) => {
-        process.stdout.write(`\r${p.phase.padEnd(8)} ${p.done}/${p.total}${' '.repeat(20)}`);
-      },
+    const retrieval = createRetrieval(rt);
+    try {
+      await retrieval.indexing.run({
+        mode: 'incremental',
+        onProgress: (p) => {
+          process.stdout.write(`\r${p.phase.padEnd(8)} ${p.done}/${p.total}${' '.repeat(20)}`);
+        },
+      });
+      process.stdout.write('\n');
+    } finally {
+      await retrieval.dispose();
+    }
+
+    const claudeBin = resolveClaudeBin();
+    const probe = spawnSync(claudeBin, ['--version'], { encoding: 'utf8', timeout: 5000 });
+    if (probe.status !== 0) {
+      process.stderr.write(`"${claudeBin} --version" failed; install Claude Code: https://code.claude.com/docs/en/setup\n`);
+      return { exitCode: 1 };
+    }
+
+    await rt.events.emit({ event: 'start_launched', data: { args: passthrough } });
+    const exitCode = await new Promise<number>((resolve) => {
+      const child = spawn(claudeBin, ['--agent', 'yandecode-dispatcher', ...passthrough], { stdio: 'inherit', cwd: rt.paths.root });
+      child.on('exit', (code) => resolve(code ?? 1));
+      child.on('error', (err) => {
+        process.stderr.write(`failed to launch "${claudeBin}": ${err.message}\n`);
+        resolve(1);
+      });
     });
-    process.stdout.write('\n');
+    await rt.events.emit({ event: 'start_exited', data: { exitCode } });
+    return { exitCode };
   } finally {
-    await retrieval.dispose();
-  }
-
-  const claudeBin = resolveClaudeBin();
-  const probe = spawnSync(claudeBin, ['--version'], { encoding: 'utf8', timeout: 5000 });
-  if (probe.status !== 0) {
-    process.stderr.write(`"${claudeBin} --version" failed; install Claude Code: https://code.claude.com/docs/en/setup\n`);
     rt.close();
-    return { exitCode: 1 };
   }
-
-  await rt.events.emit({ event: 'start_launched', data: { args: passthrough } });
-  const exitCode = await new Promise<number>((resolve) => {
-    const child = spawn(claudeBin, ['--agent', 'yandecode-dispatcher', ...passthrough], { stdio: 'inherit', cwd: rt.paths.root });
-    child.on('exit', (code) => resolve(code ?? 1));
-  });
-  await rt.events.emit({ event: 'start_exited', data: { exitCode } });
-  rt.close();
-  return { exitCode };
 }
 
 registerCommand((program) => {
