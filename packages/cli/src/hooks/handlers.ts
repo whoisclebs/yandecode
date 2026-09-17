@@ -3,6 +3,7 @@ import { join, relative, sep } from 'node:path';
 import { YandeCodeError, nowIso, resolveInsideRoot } from '@yandecode/core';
 import { z } from 'zod';
 import { tryOpenRuntime, type RuntimeContext } from '../context.js';
+import { createSwarmRuntime } from '../swarm-runtime.js';
 
 export const HookInputSchema = z
   .object({
@@ -33,6 +34,18 @@ function sessionStartContext(rt: RuntimeContext): string {
 
 function toRelativePosix(root: string, abs: string): string {
   return relative(root, abs).split(sep).join('/');
+}
+
+function extractAgentName(input: HookInput): string | null {
+  const raw = input as Record<string, unknown>;
+  const candidate = raw.agent_id ?? raw.subagent_id ?? raw.name;
+  return typeof candidate === 'string' && candidate.length > 0 ? candidate : null;
+}
+
+function extractWorktreePath(input: HookInput): string | null {
+  const raw = input as Record<string, unknown>;
+  const candidate = raw.worktree_path ?? raw.path;
+  return typeof candidate === 'string' && candidate.length > 0 ? candidate : null;
 }
 
 export async function handleHook(
@@ -80,7 +93,36 @@ export async function handleHook(
 
   if (event === 'SessionEnd') {
     if (input.session_id) await rt.sessions.end(input.session_id, input.reason ?? 'unknown');
+    const swarmRt = createSwarmRuntime(rt);
+    const orphaned = swarmRt.swarmService.listActiveSwarmsForSession(input.session_id ?? null);
+    for (const swarm of orphaned) {
+      await swarmRt.swarmService.swarmCancel(swarm.id);
+      await rt.events.emit({ event: 'swarm_orphaned_cancelled', data: { swarmId: swarm.id } });
+    }
     await rt.events.emit({ event: 'session_ended', data: { reason: input.reason ?? 'unknown' } });
+    return { stdout: '' };
+  }
+
+  if (event === 'SubagentStop') {
+    const agentName = extractAgentName(input);
+    if (agentName) {
+      const swarmRt = createSwarmRuntime(rt);
+      const task = swarmRt.swarmService.getTask(agentName);
+      if (task && (task.status === 'claimed' || task.status === 'running')) {
+        await swarmRt.swarmService.taskUpdate(task.id, 'failed', {
+          resultJson: JSON.stringify({ STATUS: 'failed', SUMMARY: 'agent stopped without completing (SubagentStop)', EVIDENCE: [], FILES_TOUCHED: [], TESTS: [], RISKS: [], FOLLOW_UP: [] }),
+        });
+        await rt.events.emit({ event: 'task_orphaned', data: { taskId: task.id, reason: 'subagent_stop' } });
+      }
+    }
+    return { stdout: '' };
+  }
+
+  if (event === 'WorktreeCreate' || event === 'WorktreeRemove') {
+    const worktreePath = extractWorktreePath(input);
+    if (worktreePath) {
+      await rt.events.emit({ event: event === 'WorktreeCreate' ? 'worktree_created' : 'worktree_removed', data: { path: worktreePath } });
+    }
     return { stdout: '' };
   }
 

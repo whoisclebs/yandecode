@@ -6,7 +6,7 @@ CREATE TABLE swarms (
   strategy TEXT NOT NULL CHECK (strategy IN ('adaptive','pipeline','star')),
   status TEXT NOT NULL CHECK (status IN ('active','completed','failed','cancelled')),
   max_agents INTEGER NOT NULL,
-  session_id TEXT REFERENCES sessions(id),
+  session_id TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   completed_at TEXT

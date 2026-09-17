@@ -41,6 +41,9 @@ describe('runInit', () => {
       'SessionStart',
       'PostToolUse',
       'SessionEnd',
+      'SubagentStop',
+      'WorktreeCreate',
+      'WorktreeRemove',
     ]);
     const mcp = readJson(join(root, '.mcp.json'));
     expect((mcp.mcpServers as Record<string, unknown>).yandecode).toEqual({

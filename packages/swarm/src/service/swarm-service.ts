@@ -217,6 +217,15 @@ export class SwarmService {
     return this.deps.tasks.get(taskId);
   }
 
+  listActiveSwarms(): SwarmRecord[] {
+    return this.deps.swarms.listActive();
+  }
+
+  listActiveSwarmsForSession(sessionId: string | null): SwarmRecord[] {
+    if (!sessionId) return [];
+    return this.deps.swarms.listActive().filter((s) => s.sessionId === sessionId);
+  }
+
   async workspaceReserve(input: {
     swarmId: string;
     taskId: string;
