@@ -16,5 +16,8 @@ jobs:
       - run: npm run build
       - run: npm run lint
       - run: npm run format:check
+      - uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: scripts
       - run: npm run typecheck
       - run: npm test

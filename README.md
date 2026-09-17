@@ -1,6 +1,7 @@
 <a id="readme-top"></a>
 
 <!-- PROJECT SHIELDS -->
+
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
@@ -43,6 +44,7 @@
     </li>
     <li><a href="#usage">Usage</a></li>
     <li><a href="#what-gets-added-to-your-project">What Gets Added To Your Project</a></li>
+    <li><a href="#benchmarks">Benchmarks</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
@@ -52,7 +54,12 @@
 </details>
 
 <!-- ABOUT THE PROJECT -->
+
 ## About The Project
+
+> Status: v0 complete — local RAG (hybrid lexical + semantic search) and the Claude
+> Code harness (agents, skills, hooks, MCP). Swarm orchestration and cross-session
+> memory are deferred to a later version.
 
 YandeCode is **not** a replacement for Claude Code. It is a harness that sits behind it:
 
@@ -81,25 +88,26 @@ See [`docs/adr/`](docs/adr) for the architecture decisions this project has actu
 
 ### Built With
 
-* [![TypeScript][TypeScript-shield]][TypeScript-url]
-* [![Node.js][Node-shield]][Node-url]
-* [Claude Code](https://code.claude.com/docs) — the execution runtime
-* [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) — operational state and FTS5 lexical search
-* [USearch](https://github.com/unum-cloud/usearch) — HNSW vector index
-* [@huggingface/transformers](https://github.com/huggingface/transformers.js) — local embedding inference (`Snowflake/snowflake-arctic-embed-xs`)
-* [web-tree-sitter](https://github.com/tree-sitter/tree-sitter) — syntax-aware code chunking
-* [Model Context Protocol](https://modelcontextprotocol.io/) — the `rag_search` / `rag_status` tools Claude Code calls
+- [![TypeScript][TypeScript-shield]][TypeScript-url]
+- [![Node.js][Node-shield]][Node-url]
+- [Claude Code](https://code.claude.com/docs) — the execution runtime
+- [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) — operational state and FTS5 lexical search
+- [USearch](https://github.com/unum-cloud/usearch) — HNSW vector index
+- [@huggingface/transformers](https://github.com/huggingface/transformers.js) — local embedding inference (`Snowflake/snowflake-arctic-embed-xs`)
+- [web-tree-sitter](https://github.com/tree-sitter/tree-sitter) — syntax-aware code chunking
+- [Model Context Protocol](https://modelcontextprotocol.io/) — the `rag_search` / `rag_status` tools Claude Code calls
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- GETTING STARTED -->
+
 ## Getting Started
 
 ### Prerequisites
 
-* Node.js 22 or newer
-* [Claude Code](https://code.claude.com/docs/en/setup) installed and authenticated
-* Git
+- Node.js 22 or newer
+- [Claude Code](https://code.claude.com/docs/en/setup) installed and authenticated
+- Git
 
 ### Installation
 
@@ -116,12 +124,13 @@ curl -fsSL https://raw.githubusercontent.com/whoisclebs/yandecode/main/scripts/i
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- USAGE EXAMPLES -->
+
 ## Usage
 
 ```bash
 cd your-repository
 yandecode init      # adds agents, skills, hooks, MCP server and a CLAUDE.md block
-yandecode doctor    # verifies the installation
+yandecode doctor    # verifies the installation, the embedding model and the index
 yandecode index     # builds the local hybrid (lexical + semantic) index
 yandecode rag search "where is authentication handled?"
 yandecode start      # launches Claude Code with the YandeCode dispatcher agent
@@ -137,18 +146,34 @@ or anything you've edited since; `--purge` also deletes `.yandecode/`.
 - `.claude/agents/yandecode-*.md` — dispatcher, scout, implementer, tester, reviewer, security, researcher
 - `.claude/skills/yandecode-*/SKILL.md` — context rules and delegation protocol
 - `.claude/settings.json` — `SessionStart`, `PostToolUse`, `SessionEnd` hooks calling `yandecode hook`
-- `.mcp.json` — the `yandecode` MCP server (`rag_search`, `rag_status`)
+- `.mcp.json` — the `yandecode` MCP server (`rag_search`: hybrid lexical + semantic
+  search over the indexed repository; `rag_status`: index readiness)
 - `CLAUDE.md` — a marked block explaining how to use retrieval
 - `.yandecode/` — local state (gitignored); `yandecode.json` — shareable config
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+## Benchmarks
+
+`benchmarks/rag/` evaluates retrieval quality and performance against a small
+synthetic fixture repository (`fixtures/repo-auth/`):
+
+```bash
+npm run test:slow        # asserts Recall@5 >= 0.8 and MRR >= 0.6 with the real model
+npm run benchmark:rag    # prints latency/throughput/recall numbers and writes JSON
+```
+
+Both download and cache the Arctic Embed XS model on first run.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 <!-- ROADMAP -->
+
 ## Roadmap
 
 - [x] **Part 1 — Foundation & Harness**: monorepo, SQLite persistence, the Claude Code plugin
       (agents/skills/hooks), and the CLI (`init`, `uninstall`, `doctor`, `status`, `hook`, `mcp serve`).
-- [ ] **Part 2 — Retrieval**: local embeddings, Tree-sitter chunking, the USearch vector index, hybrid
+- [x] **Part 2 — Retrieval**: local embeddings, Tree-sitter chunking, the USearch vector index, hybrid
       (lexical + semantic) search, and the `index` / `rag search` / `start` commands.
 - [ ] **Part 3 — Swarm, Router & Memory**: task decomposition and a deterministic scheduler, parallel
       worker delegation through Claude Code's native Agent tool (never headless processes — see
@@ -161,6 +186,7 @@ features and known issues.
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- CONTRIBUTING -->
+
 ## Contributing
 
 Contributions make open source great. Any contribution you make is **appreciated**.
@@ -187,6 +213,7 @@ npm run build
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- LICENSE -->
+
 ## License
 
 Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information.
@@ -194,6 +221,7 @@ Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- CONTACT -->
+
 ## Contact
 
 Project Link: [https://github.com/whoisclebs/yandecode](https://github.com/whoisclebs/yandecode)
@@ -201,14 +229,16 @@ Project Link: [https://github.com/whoisclebs/yandecode](https://github.com/whois
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- ACKNOWLEDGMENTS -->
+
 ## Acknowledgments
 
-* [Claude Code](https://code.claude.com/docs) — the runtime YandeCode is built around
-* [Best-README-Template](https://github.com/othneildrew/Best-README-Template) — this file's structure
+- [Claude Code](https://code.claude.com/docs) — the runtime YandeCode is built around
+- [Best-README-Template](https://github.com/othneildrew/Best-README-Template) — this file's structure
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- MARKDOWN LINKS & IMAGES -->
+
 [contributors-shield]: https://img.shields.io/github/contributors/whoisclebs/yandecode.svg?style=for-the-badge
 [contributors-url]: https://github.com/whoisclebs/yandecode/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/whoisclebs/yandecode.svg?style=for-the-badge
@@ -223,4 +253,5 @@ Project Link: [https://github.com/whoisclebs/yandecode](https://github.com/whois
 [TypeScript-url]: https://www.typescriptlang.org/
 [Node-shield]: https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white
 [Node-url]: https://nodejs.org/
+
 </content>
