@@ -75,9 +75,7 @@ What YandeCode adds around that runtime:
 - **Local-first state** — everything lives under `.yandecode/` in your project (SQLite, vector index,
   logs); no hosted services, no external embedding APIs, nothing leaves your machine.
 
-Inspired by [Ruflo](https://github.com/ruvnet/ruflo), `opencode-doppelganger`, and the
-`oh-my-clebs-coder` dispatcher/scout pattern — without copying any of them. See
-[`docs/adr/`](docs/adr) for the architecture decisions this project has actually made.
+See [`docs/adr/`](docs/adr) for the architecture decisions this project has actually made.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -205,7 +203,6 @@ Project Link: [https://github.com/whoisclebs/yandecode](https://github.com/whois
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-* [Ruflo](https://github.com/ruvnet/ruflo) — coordination-pattern inspiration, not a dependency
 * [Claude Code](https://code.claude.com/docs) — the runtime YandeCode is built around
 * [Best-README-Template](https://github.com/othneildrew/Best-README-Template) — this file's structure
 
