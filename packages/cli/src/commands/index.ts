@@ -5,4 +5,5 @@ import './uninstall.js';
 import './doctor.js';
 import './status.js';
 import './hook.js';
+import './mcp.js';
 export {};
