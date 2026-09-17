@@ -147,6 +147,23 @@ describe('handleHook: SubagentStop, WorktreeCreate/Remove, SessionEnd swarm clea
     rt.close();
   });
 
+  it('SubagentStop cancels (not fails) a task that was only claimed, never started', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'yc-hook-subagent-claimed-'));
+    writeFileSync(join(dir, 'yandecode.json'), '{}');
+    const rt = openRuntime(dir);
+    const service = swarmService(rt);
+    const swarm = await service.createSwarm({ title: 't', goal: 'g', strategy: 'adaptive', sessionId: null });
+    const [task] = await service.taskCreate(swarm.id, [{ ref: 'a', title: 'a', description: 'd', role: 'implementer' }]);
+    await service.taskUpdate(task!.id, 'ready');
+    await service.taskUpdate(task!.id, 'claimed');
+
+    await handleHook('SubagentStop', { agent_id: task!.id }, rt);
+
+    const after = service.getTask(task!.id)!;
+    expect(after.status).toBe('cancelled');
+    rt.close();
+  });
+
   it('SubagentStop is a no-op when no agent identifier is present or no matching running task exists', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'yc-hook-subagent-noop-'));
     writeFileSync(join(dir, 'yandecode.json'), '{}');

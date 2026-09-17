@@ -109,8 +109,9 @@ export async function handleHook(
       const swarmRt = createSwarmRuntime(rt);
       const task = swarmRt.swarmService.getTask(agentName);
       if (task && (task.status === 'claimed' || task.status === 'running')) {
-        await swarmRt.swarmService.taskUpdate(task.id, 'failed', {
-          resultJson: JSON.stringify({ STATUS: 'failed', SUMMARY: 'agent stopped without completing (SubagentStop)', EVIDENCE: [], FILES_TOUCHED: [], TESTS: [], RISKS: [], FOLLOW_UP: [] }),
+        const to = task.status === 'claimed' ? 'cancelled' : 'failed';
+        await swarmRt.swarmService.taskUpdate(task.id, to, {
+          resultJson: JSON.stringify({ STATUS: to, SUMMARY: 'agent stopped without completing (SubagentStop)', EVIDENCE: [], FILES_TOUCHED: [], TESTS: [], RISKS: [], FOLLOW_UP: [] }),
         });
         await rt.events.emit({ event: 'task_orphaned', data: { taskId: task.id, reason: 'subagent_stop' } });
       }
