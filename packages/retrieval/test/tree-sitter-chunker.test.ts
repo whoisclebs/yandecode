@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { LineChunker } from '../src/chunking/line-chunker.js';
-import { createDefaultChunker } from '../src/chunking/router.js';
+import { ChunkerRouter, createDefaultChunker } from '../src/chunking/router.js';
 import { TreeSitterChunker } from '../src/chunking/tree-sitter-chunker.js';
+import { MarkdownChunker } from '../src/chunking/markdown-chunker.js';
 import { ApproxTokenCounter } from '../src/embeddings/provider.js';
 
 const counter = new ApproxTokenCounter();
@@ -79,6 +80,17 @@ describe('TreeSitterChunker', () => {
     expect(rust.map((c) => c.symbol)).toEqual(expect.arrayContaining(['P', 'go']));
     expect(rust.find((c) => c.kind === 'impl')?.symbol).toBe('P');
   });
+
+  it('handles javascript and tsx grammars', async () => {
+    const chunker = new TreeSitterChunker(counter, new LineChunker(counter));
+    const js = await chunker.chunk('a.js', "function greet(name) {\n  return 'hi ' + name;\n}\n\nclass Greeter {\n  hello() { return greet('x'); }\n}\n", 'javascript');
+    expect(js.map((c) => [c.kind, c.symbol])).toEqual(expect.arrayContaining([
+      ['function', 'greet'],
+      ['class', 'Greeter'],
+    ]));
+    const tsx = await chunker.chunk('a.tsx', "export function Button(props: { label: string }) {\n  return <button>{props.label}</button>;\n}\n", 'tsx');
+    expect(tsx.map((c) => c.symbol)).toEqual(expect.arrayContaining(['Button']));
+  });
 });
 
 describe('ChunkerRouter', () => {
@@ -92,5 +104,23 @@ describe('ChunkerRouter', () => {
     expect(unknown[0]?.kind).toBe('text');
     const code = await router.chunk('x.go', 'package x\nfunc F() {}\n', 'go');
     expect(code.some((c) => c.symbol === 'F')).toBe(true);
+  });
+
+  it('falls back to LineChunker when TreeSitterChunker throws for a supported language', async () => {
+    const throwingTreeSitter = {
+      supports: () => true,
+      chunk: () => {
+        throw new Error('simulated parse failure');
+      },
+    };
+    const lineChunker = new LineChunker(counter);
+    const router = new ChunkerRouter(
+      throwingTreeSitter as unknown as TreeSitterChunker,
+      new MarkdownChunker(counter, lineChunker),
+      lineChunker,
+    );
+    const out = await router.chunk('broken.go', 'package x\nfunc F() {}\n', 'go');
+    expect(out[0]?.kind).toBe('go');
+    expect(out.some((c) => c.content.includes('func F'))).toBe(true);
   });
 });
