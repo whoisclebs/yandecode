@@ -7,7 +7,7 @@ export interface BoostCandidate {
 
 const SYMBOL_BOOST = 0.05;
 const TEST_PATH_BOOST = 0.02;
-const TEST_PATH_RE = /(\.|_|\/)(test|spec)s?(\.|\/)/i;
+const TEST_PATH_RE = /^(?:test|spec)s?\/|(\.|_|\/)(test|spec)s?(\.|\/)/i;
 
 function lastSegment(symbol: string): string {
   const parts = symbol.split(/[.:#]/).filter((p) => p.length > 0);

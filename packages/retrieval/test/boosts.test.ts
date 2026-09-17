@@ -21,4 +21,19 @@ describe('applyBoosts', () => {
     const input = [{ id: 1, score: 0.5, symbol: 'Foo.bar', path: 'src/foo.ts' }];
     expect(applyBoosts(input, 'unrelated query')).toEqual(input);
   });
+
+  it('boosts a path where the test/spec directory is the very first path segment', () => {
+    const out = applyBoosts([{ id: 1, score: 0.5, symbol: null, path: 'test/handler.ts' }], 'run the test suite');
+    expect(out[0]?.score).toBeCloseTo(0.52, 10);
+  });
+
+  it('boosts a leading spec/ directory the same way', () => {
+    const out = applyBoosts([{ id: 1, score: 0.5, symbol: null, path: 'spec/foo.ts' }], 'spec coverage');
+    expect(out[0]?.score).toBeCloseTo(0.52, 10);
+  });
+
+  it('does not boost a filename that merely contains "test" as a substring without a real separator', () => {
+    const input = [{ id: 1, score: 0.5, symbol: null, path: 'src/testUtils.ts' }];
+    expect(applyBoosts(input, 'test utils')).toEqual(input);
+  });
 });
