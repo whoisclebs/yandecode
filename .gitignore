@@ -5,3 +5,4 @@ coverage/
 .yandecode/
 .DS_Store
 docs/superpowers/
+.claude/
