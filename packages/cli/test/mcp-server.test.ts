@@ -4,8 +4,9 @@ import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { describe, expect, it } from 'vitest';
-import { LeaseRepository, MessageRepository, SwarmRepository, TaskRepository, WorkspaceRepository } from '@yandecode/core';
-import { SwarmService } from '@yandecode/swarm';
+import { LeaseRepository, MemoryRepository, MessageRepository, SwarmRepository, TaskRepository, WorkspaceRepository, type MemoryRecord } from '@yandecode/core';
+import { HashEmbeddingProvider, USearchVectorIndex } from '@yandecode/retrieval';
+import { MemoryRetriever, MemoryService, SwarmService } from '@yandecode/swarm';
 import { openRuntime } from '../src/context.js';
 import { createMcpServer, formatHits, type RagHit } from '../src/mcp/server.js';
 
@@ -18,15 +19,22 @@ async function connect(
   writeFileSync(join(dir, 'yandecode.json'), '{}');
   const rt = openRuntime(dir);
   const extra = withSwarm
-    ? {
-        swarmService: new SwarmService({
-          swarms: new SwarmRepository(rt.state),
-          tasks: new TaskRepository(rt.state),
-          leases: new LeaseRepository(rt.state),
-          workspaces: new WorkspaceRepository(rt.state),
-        }),
-        messages: new MessageRepository(rt.state),
-      }
+    ? (() => {
+        const memories = new MemoryRepository(rt.state);
+        const memoryProvider = new HashEmbeddingProvider(64);
+        const memoryIndex = new USearchVectorIndex({ dimensions: 64, file: join(dir, 'memory-test.usearch') });
+        return {
+          swarmService: new SwarmService({
+            swarms: new SwarmRepository(rt.state),
+            tasks: new TaskRepository(rt.state),
+            leases: new LeaseRepository(rt.state),
+            workspaces: new WorkspaceRepository(rt.state),
+          }),
+          messages: new MessageRepository(rt.state),
+          memoryService: new MemoryService({ memories, provider: memoryProvider, index: memoryIndex }),
+          memoryRetriever: new MemoryRetriever({ memories, provider: memoryProvider, index: memoryIndex }),
+        };
+      })()
     : {};
   const server = createMcpServer({ rt, ...(search ? { search } : {}), ...(note ? { note } : {}), ...extra });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -47,12 +55,12 @@ const text = (r: unknown): string =>
   (r as { content: { type: string; text: string }[] }).content[0]!.text;
 
 describe('MCP server', () => {
-  it('exposes rag_search and rag_status (plus swarm/task/message/workspace tools, always registered)', async () => {
+  it('exposes rag_search and rag_status (plus swarm/task/message/workspace/memory tools, always registered)', async () => {
     const { client, close } = await connect();
     const tools = (await client.listTools()).tools.map((t) => t.name).sort();
     expect(tools).toContain('rag_search');
     expect(tools).toContain('rag_status');
-    expect(tools).toHaveLength(13);
+    expect(tools).toHaveLength(15);
     await close();
   });
 
@@ -131,12 +139,14 @@ describe('MCP server', () => {
   });
 });
 
-describe('swarm/task/message/workspace MCP tools', () => {
-  it('exposes all 13 v0 tools once swarm deps are wired', async () => {
+describe('swarm/task/message/workspace/memory MCP tools', () => {
+  it('exposes all 15 v0 tools once swarm and memory deps are wired', async () => {
     const { client, close } = await connect(undefined, undefined, true);
     const tools = (await client.listTools()).tools.map((t) => t.name).sort();
     expect(tools).toEqual(
       [
+        'memory_search',
+        'memory_store',
         'message_read',
         'message_send',
         'rag_search',
@@ -220,6 +230,33 @@ describe('swarm/task/message/workspace MCP tools', () => {
 
     const status = (await client.callTool({ name: 'swarm_status', arguments: { swarmId: swarm.id } })) as { content: { text: string }[] };
     expect(JSON.parse(status.content[0]!.text)).toMatchObject({ id: swarm.id, taskCounts: { planned: 1 } });
+    await close();
+  });
+
+  it('stores and retrieves a memory end to end through the MCP tools', async () => {
+    const { client, close } = await connect(undefined, undefined, true);
+
+    const rejected = (await client.callTool({ name: 'memory_store', arguments: { namespace: 'patterns', content: 'no evidence here' } })) as { content: { text: string }[] };
+    expect(JSON.parse(rejected.content[0]!.text)).toMatchObject({ status: 'rejected' });
+
+    const stored = (await client.callTool({
+      name: 'memory_store',
+      arguments: { namespace: 'patterns', content: 'retry idle connections with exponential backoff', evidence: 'task-1', confidence: 0.7 },
+    })) as { content: { text: string }[] };
+    const parsedStored = JSON.parse(stored.content[0]!.text) as { status: string; memory?: MemoryRecord };
+    expect(parsedStored.status).toBe('stored');
+
+    const searched = (await client.callTool({ name: 'memory_search', arguments: { query: 'retry idle connections with exponential backoff', namespace: 'patterns' } })) as { content: { text: string }[] };
+    const hits = JSON.parse(searched.content[0]!.text) as { id: string }[];
+    expect(hits.map((h) => h.id)).toContain(parsedStored.memory!.id);
+
+    await close();
+  });
+
+  it('returns isError when memory deps are not wired', async () => {
+    const { client, close } = await connect();
+    const r = (await client.callTool({ name: 'memory_search', arguments: { query: 'x' } })) as { isError?: boolean };
+    expect(r.isError).toBe(true);
     await close();
   });
 });

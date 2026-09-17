@@ -3,6 +3,7 @@ import { registerCommand } from '../cli.js';
 import { openRuntime } from '../context.js';
 import { createMcpServer } from '../mcp/server.js';
 import { createRetrieval } from '../retrieval-runtime.js';
+import { createSwarmRuntime } from '../swarm-runtime.js';
 
 registerCommand((program) => {
   const mcp = program.command('mcp').description('MCP server commands');
@@ -34,7 +35,16 @@ registerCommand((program) => {
         const dirty = rt.index.listDirty().length;
         return dirty > AUTO_REINDEX_MAX_DIRTY ? `NOTE: ${dirty} files changed since the last index; run "yandecode index".` : null;
       };
-      const server = createMcpServer({ rt, search, note });
+      const swarmRt = createSwarmRuntime(rt);
+      const server = createMcpServer({
+        rt,
+        search,
+        note,
+        swarmService: swarmRt.swarmService,
+        messages: swarmRt.messages,
+        memoryService: swarmRt.memoryService,
+        memoryRetriever: swarmRt.memoryRetriever,
+      });
       const transport = new StdioServerTransport();
       await rt.events.emit({ event: 'mcp_started' });
       const shutdown = async (): Promise<void> => {

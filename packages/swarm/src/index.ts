@@ -24,3 +24,16 @@ export {
   type MemoryStoreInput,
   type MemoryStoreResult,
 } from './memory/memory-service.js';
+export {
+  applyRecencyConfidenceBoost,
+  CONFIDENCE_BOOST_WEIGHT,
+  DEFAULT_MEMORY_RETRIEVER_CONSTANTS,
+  MemoryRetriever,
+  RECENCY_BOOST_WEIGHT,
+  RECENCY_DECAY_DAYS,
+  type MemoryHit,
+  type MemoryRetrieverConstants,
+  type MemoryRetrieverDeps,
+  type MemorySearchOptions,
+  type RecencyConfidenceCandidate,
+} from './memory/memory-retriever.js';

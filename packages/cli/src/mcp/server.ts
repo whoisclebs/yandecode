@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { MessageRepository, TaskStatus } from '@yandecode/core';
-import type { SwarmService, TaskCreateInput } from '@yandecode/swarm';
+import type { MemoryRetriever, MemoryService, SwarmService, TaskCreateInput } from '@yandecode/swarm';
 import { z } from 'zod';
 import type { RuntimeContext } from '../context.js';
 import { VERSION } from '../version.js';
@@ -22,12 +22,16 @@ export interface McpDeps {
   note?: () => string | null;
   swarmService?: SwarmService;
   messages?: MessageRepository;
+  memoryService?: MemoryService;
+  memoryRetriever?: MemoryRetriever;
 }
 
 const NOT_AVAILABLE = 'RAG index not available. Run "yandecode index" in the project root.';
 const TASK_STATUSES = ['planned', 'ready', 'claimed', 'running', 'blocked', 'review', 'completed', 'failed', 'cancelled'] as const;
 const MESSAGE_TYPES = ['finding', 'question', 'answer', 'dependency', 'warning', 'result'] as const;
 const SWARM_NOT_AVAILABLE = 'Swarm orchestration not available: this session was not opened with swarm support.';
+const MEMORY_NAMESPACES = ['decisions', 'patterns', 'solutions', 'failures', 'tasks', 'feedback'] as const;
+const MEMORY_NOT_AVAILABLE = 'Memory not available: this session was not opened with memory support.';
 
 function jsonResult(value: unknown): { content: [{ type: 'text'; text: string }] } {
   return { content: [{ type: 'text', text: JSON.stringify(value) }] };
@@ -268,6 +272,48 @@ export function createMcpServer(deps: McpDeps): McpServer {
       if (!deps.swarmService) return unavailable(SWARM_NOT_AVAILABLE);
       await deps.swarmService.workspaceRelease(taskId);
       return jsonResult({ released: true });
+    },
+  );
+
+  server.registerTool(
+    'memory_store',
+    {
+      description: 'Store a durable memory (a decision, pattern, solution, failure, task note, or feedback) with evidence, for future sessions to retrieve.',
+      inputSchema: {
+        namespace: z.enum(MEMORY_NAMESPACES),
+        content: z.string().min(1).max(4000),
+        summary: z.string().max(500).optional(),
+        confidence: z.number().min(0).max(1).default(0.5),
+        evidence: z.string().min(1).optional(),
+        sourceSwarmId: z.string().optional(),
+        sourceTaskId: z.string().optional(),
+      },
+    },
+    async ({ namespace, content, summary, confidence, evidence, sourceSwarmId, sourceTaskId }) => {
+      if (!deps.memoryService) return unavailable(MEMORY_NOT_AVAILABLE);
+      const result = await deps.memoryService.store({
+        namespace,
+        content,
+        summary: summary ?? null,
+        sourceSwarmId: sourceSwarmId ?? null,
+        sourceTaskId: sourceTaskId ?? null,
+        confidence,
+        evidence: evidence ?? null,
+      });
+      return jsonResult(result);
+    },
+  );
+
+  server.registerTool(
+    'memory_search',
+    {
+      description: 'Search stored memories by relevance, optionally scoped to one namespace.',
+      inputSchema: { query: z.string().min(1), namespace: z.enum(MEMORY_NAMESPACES).optional(), limit: z.number().int().min(1).max(20).optional() },
+    },
+    async ({ query, namespace, limit }) => {
+      if (!deps.memoryRetriever) return unavailable(MEMORY_NOT_AVAILABLE);
+      const hits = await deps.memoryRetriever.search(query, { namespace: namespace ?? null, ...(limit !== undefined ? { limit } : {}) });
+      return jsonResult(hits);
     },
   );
 
