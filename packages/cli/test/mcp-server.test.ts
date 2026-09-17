@@ -205,6 +205,30 @@ describe('swarm/task/message/workspace/memory MCP tools', () => {
     await close();
   });
 
+  it('ties a created swarm to the current open session, so SessionEnd cleanup can find it later', async () => {
+    const { client, rt, close } = await connect(undefined, undefined, true);
+    await rt.sessions.start({ claudeSessionId: 'claude-current', cwd: rt.paths.root });
+
+    const created = (await client.callTool({
+      name: 'swarm_create',
+      arguments: { title: 't', goal: 'g' },
+    })) as { content: { text: string }[] };
+    const swarm = JSON.parse(created.content[0]!.text) as { sessionId: string | null };
+    expect(swarm.sessionId).toBe('claude-current');
+    await close();
+  });
+
+  it('creates a swarm with a null sessionId when no session is currently open', async () => {
+    const { client, close } = await connect(undefined, undefined, true);
+    const created = (await client.callTool({
+      name: 'swarm_create',
+      arguments: { title: 't', goal: 'g' },
+    })) as { content: { text: string }[] };
+    const swarm = JSON.parse(created.content[0]!.text) as { sessionId: string | null };
+    expect(swarm.sessionId).toBeNull();
+    await close();
+  });
+
   it('drives the full happy path: create swarm, create tasks, swarm_next, task_update, message send/read, workspace reserve/release', async () => {
     const { client, close } = await connect(undefined, undefined, true);
 

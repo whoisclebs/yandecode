@@ -63,6 +63,17 @@ export class SessionRepository {
     return row ? fromRow(row) : null;
   }
 
+  getMostRecentOpen(): SessionRecord | null {
+    const row = this.state.read((db) =>
+      db
+        .prepare(
+          'SELECT * FROM sessions WHERE ended_at IS NULL ORDER BY started_at DESC, id DESC LIMIT 1',
+        )
+        .get(),
+    ) as Row | undefined;
+    return row ? fromRow(row) : null;
+  }
+
   end(claudeSessionId: string, reason: string): Promise<number> {
     return this.state.write(
       (db) =>

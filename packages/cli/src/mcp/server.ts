@@ -155,12 +155,18 @@ export function createMcpServer(deps: McpDeps): McpServer {
     },
     async ({ title, goal, strategy, maxAgents }) => {
       if (!deps.swarmService) return unavailable(SWARM_NOT_AVAILABLE);
+      // The MCP server process and the SessionStart/SessionEnd hook processes are separate short-
+      // lived CLI invocations with no shared in-memory state, so "the current session" can only be
+      // resolved by reading the sessions table for whichever session is still open (SessionStart
+      // wrote it, SessionEnd hasn't closed it yet). This is what makes SessionEnd's swarm cleanup
+      // (packages/cli/src/hooks/handlers.ts) able to find and cancel this swarm later.
+      const openSession = deps.rt.sessions.getMostRecentOpen();
       const swarm = await deps.swarmService.createSwarm({
         title,
         goal,
         strategy,
         ...(maxAgents !== undefined ? { maxAgents } : {}),
-        sessionId: null,
+        sessionId: openSession?.claudeSessionId ?? null,
       });
       return jsonResult(swarm);
     },

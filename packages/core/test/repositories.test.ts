@@ -17,6 +17,19 @@ describe('SessionRepository', () => {
     expect(repo.findOpenByClaudeId('abc')).toBeNull();
     expect(await repo.end('abc', 'again')).toBe(0);
   });
+
+  it('getMostRecentOpen returns the most recently started still-open session, or null when none is open', async () => {
+    const state = StateService.open(':memory:');
+    const repo = new SessionRepository(state);
+    expect(repo.getMostRecentOpen()).toBeNull();
+    const first = await repo.start({ claudeSessionId: 'first', cwd: '/repo' });
+    const second = await repo.start({ claudeSessionId: 'second', cwd: '/repo' });
+    expect(repo.getMostRecentOpen()?.id).toBe(second.id);
+    await repo.end('second', 'exit');
+    expect(repo.getMostRecentOpen()?.id).toBe(first.id);
+    await repo.end('first', 'exit');
+    expect(repo.getMostRecentOpen()).toBeNull();
+  });
 });
 
 describe('EventRepository', () => {
