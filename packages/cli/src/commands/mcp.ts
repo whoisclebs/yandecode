@@ -37,7 +37,7 @@ registerCommand((program) => {
           ? `NOTE: ${dirty} files changed since the last index; run "yandecode index".`
           : null;
       };
-      const swarmRt = createSwarmRuntime(rt);
+      const swarmRt = await createSwarmRuntime(rt);
       const server = createMcpServer({
         rt,
         search,

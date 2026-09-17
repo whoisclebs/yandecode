@@ -25,9 +25,9 @@ registerCommand((program) => {
   swarm
     .command('status [swarmId]')
     .description("Show all active swarms, or one swarm's task breakdown")
-    .action((swarmId?: string) => {
+    .action(async (swarmId?: string) => {
       const rt = openRuntime(process.cwd());
-      const { swarmService } = createSwarmRuntime(rt);
+      const { swarmService } = await createSwarmRuntime(rt);
       try {
         if (!swarmId) {
           process.stdout.write(formatSwarmList(swarmService.listActiveSwarms()));

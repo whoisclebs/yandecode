@@ -180,6 +180,12 @@ export class MemoryRepository {
     }
   }
 
+  count(): number {
+    return this.state.read(
+      (db) => (db.prepare('SELECT COUNT(*) AS n FROM memories').get() as { n: number }).n,
+    );
+  }
+
   searchLexical(
     query: string,
     namespace: MemoryNamespace | null,

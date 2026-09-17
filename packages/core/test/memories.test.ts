@@ -80,6 +80,13 @@ describe('MemoryRepository', () => {
     expect(rows.map((r) => r.vectorId)).toEqual([1, 2]);
   });
 
+  it('count returns the total number of stored memories', async () => {
+    expect(repo.count()).toBe(0);
+    await repo.create(input({ contentHash: 'a' }));
+    await repo.create(input({ contentHash: 'b' }));
+    expect(repo.count()).toBe(2);
+  });
+
   it('searches lexically, optionally scoped by namespace, ranking better matches higher', async () => {
     await repo.create(
       input({

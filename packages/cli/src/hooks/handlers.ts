@@ -93,7 +93,7 @@ export async function handleHook(
 
   if (event === 'SessionEnd') {
     if (input.session_id) await rt.sessions.end(input.session_id, input.reason ?? 'unknown');
-    const swarmRt = createSwarmRuntime(rt);
+    const swarmRt = await createSwarmRuntime(rt);
     const orphaned = swarmRt.swarmService.listActiveSwarmsForSession(input.session_id ?? null);
     for (const swarm of orphaned) {
       await swarmRt.swarmService.swarmCancel(swarm.id);
@@ -106,7 +106,7 @@ export async function handleHook(
   if (event === 'SubagentStop') {
     const agentName = extractAgentName(input);
     if (agentName) {
-      const swarmRt = createSwarmRuntime(rt);
+      const swarmRt = await createSwarmRuntime(rt);
       const task = swarmRt.swarmService.getTask(agentName);
       if (task && (task.status === 'claimed' || task.status === 'running')) {
         const to = task.status === 'claimed' ? 'cancelled' : 'failed';
@@ -137,7 +137,7 @@ export async function handleHook(
         event: event === 'WorktreeCreate' ? 'worktree_created' : 'worktree_removed',
         data: { path: worktreePath },
       });
-      const swarmRt = createSwarmRuntime(rt);
+      const swarmRt = await createSwarmRuntime(rt);
       if (event === 'WorktreeCreate') {
         // Best-effort: the hook payload carries only a path, no swarmId/taskId, so the new
         // workspace row is associated with whichever swarm is currently most-recently-active
