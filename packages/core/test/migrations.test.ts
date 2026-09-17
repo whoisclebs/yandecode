@@ -84,6 +84,12 @@ describe('migrations', () => {
     runMigrations(db);
     const cols = (db.prepare('PRAGMA table_info(chunks)').all() as { name: string }[]).map((c) => c.name);
     expect(cols).toContain('embedding');
-    expect(SCHEMA_VERSION).toBe(3);
+  });
+
+  it('migration 0004 adds the memories.embedding column', () => {
+    const db = openDatabase(':memory:');
+    runMigrations(db);
+    const cols = (db.prepare('PRAGMA table_info(memories)').all() as { name: string }[]).map((c) => c.name);
+    expect(cols).toContain('embedding');
   });
 });

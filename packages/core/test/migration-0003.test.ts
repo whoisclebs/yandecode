@@ -18,8 +18,8 @@ function seedTask(db: ReturnType<typeof openDatabase>, swarmId: string, id = 'ta
 }
 
 describe('migration 0003 (swarm + memory schema)', () => {
-  it('bumps SCHEMA_VERSION to 3', () => {
-    expect(SCHEMA_VERSION).toBe(3);
+  it('bumps SCHEMA_VERSION to at least 3', () => {
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(3);
   });
 
   it('rejects an invalid swarms.strategy and an invalid tasks.status via CHECK constraints', () => {
