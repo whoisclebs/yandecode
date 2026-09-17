@@ -2,7 +2,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { registerCommand } from '../cli.js';
 import { openRuntime } from '../context.js';
 import { createMcpServer } from '../mcp/server.js';
-import { createRetrieval } from '../retrieval-runtime.js';
+import { createProvider, createRetrieval } from '../retrieval-runtime.js';
 import { createSwarmRuntime } from '../swarm-runtime.js';
 
 registerCommand((program) => {
@@ -13,10 +13,16 @@ registerCommand((program) => {
     .action(async () => {
       const rt = openRuntime(process.cwd());
       const AUTO_REINDEX_MAX_DIRTY = 20;
+      // One long-lived embedding provider for the whole server process (mirrors swarm-runtime.ts's
+      // memory provider): the ONNX pipeline lazy-loads on first use and idle-times-out on its own,
+      // so holding it here means rag_search no longer reconstructs it on every single call.
+      // documents/chunker/index/retriever are still rebuilt fresh on every call below, so index
+      // freshness after an incremental reindex is unaffected.
+      const sharedProvider = createProvider(rt);
       const search = async (query: string, options: { limit: number }) => {
         const dirty = rt.index.listDirty().length;
         if (dirty >= 1 && dirty <= AUTO_REINDEX_MAX_DIRTY) {
-          const pre = createRetrieval(rt);
+          const pre = createRetrieval(rt, sharedProvider);
           try {
             await pre.indexing.run({ mode: 'incremental' });
           } finally {
@@ -24,7 +30,7 @@ registerCommand((program) => {
           }
         }
         // Re-created below so the loaded vector index reflects any reindex that just ran.
-        const retrieval = createRetrieval(rt);
+        const retrieval = createRetrieval(rt, sharedProvider);
         try {
           return await retrieval.retriever.search(query, options);
         } finally {
@@ -52,6 +58,7 @@ registerCommand((program) => {
       const shutdown = async (): Promise<void> => {
         await rt.events.emit({ event: 'mcp_stopped' });
         await server.close();
+        await sharedProvider.dispose();
         rt.close();
       };
       process.stdin.on('close', () => void shutdown());
