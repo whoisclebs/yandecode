@@ -87,6 +87,19 @@ describe('MemoryRepository', () => {
     expect(rows.map((r) => r.vectorId)).toEqual([1, 2]);
   });
 
+  it('iterateEmbeddings skips a row with a null embedding instead of throwing', async () => {
+    // MemoryInput.embedding is required at the TypeScript level, so no real write path can
+    // currently produce a null embedding - this defensively guards against a row that somehow
+    // has one anyway (e.g. a future migration or manual data fix), since iterateEmbeddings feeds
+    // straight into the memory vector index rebuild path (createSwarmRuntime), and a single bad
+    // row there should degrade gracefully, not crash the whole harness.
+    const rec = await repo.create(
+      input({ contentHash: 'a', embedding: new Float32Array([1, 0, 0]) }),
+    );
+    state.db.prepare('UPDATE memories SET embedding = NULL WHERE id = ?').run(rec.id);
+    expect([...repo.iterateEmbeddings()]).toEqual([]);
+  });
+
   it('count returns the total number of stored memories', async () => {
     expect(repo.count()).toBe(0);
     await repo.create(input({ contentHash: 'a' }));

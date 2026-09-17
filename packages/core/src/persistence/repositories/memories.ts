@@ -176,7 +176,7 @@ export class MemoryRepository {
 
   *iterateEmbeddings(): IterableIterator<{ vectorId: number; embedding: Float32Array }> {
     const stmt = this.state.db.prepare(
-      'SELECT vector_id, embedding FROM memories ORDER BY vector_id',
+      'SELECT vector_id, embedding FROM memories WHERE embedding IS NOT NULL ORDER BY vector_id',
     );
     for (const row of stmt.iterate() as IterableIterator<{
       vector_id: number;

@@ -42,3 +42,18 @@ Two independent `.usearch` files, two independent `vector_id_seq` counters, two
 independent retrievers sharing only the low-level fusion math. A future memory-quality
 improvement (e.g. a different boost formula) cannot regress repository search, and vice
 versa.
+
+**Known v0 scope boundary (2026-09-17):** switching the embedding provider (e.g.
+toggling `YANDECODE_EMBEDDINGS=hash`, or a future `rag.embeddingModel` config change)
+for a workspace that already has stored memories is not supported. `MemoryRepository`
+stores each memory's embedding at whatever dimensionality the provider active at write
+time produced; there is no re-embedding migration for existing rows. A drift check in
+`createSwarmRuntime` rebuilds the on-disk memory index from stored embeddings when its
+size doesn't match the `memories` table, but this is a size check only — it does not
+detect (and cannot safely recover from) a dimensionality change, since a correct
+recovery requires re-embedding every stored memory with the new provider, not just
+rebuilding the index shell from already-stored, now-incompatible vectors. Also,
+`evidence` is persisted (migration 0005) but not yet surfaced through any MCP-facing
+read path (`MemoryHit` doesn't include it), and `MemoryRepository.recordUsage()`/
+`archived_at` have no production caller — `memory_feedback` (added the same day as this
+note) closes the loop on `confidence` only, not on usage tracking or archival.

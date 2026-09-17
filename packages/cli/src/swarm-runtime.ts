@@ -70,6 +70,18 @@ export async function createSwarmRuntime(rt: RuntimeContext): Promise<SwarmRunti
   // next memory_store's index.save() would otherwise atomically overwrite the good on-disk file
   // with an incomplete one. Rebuilding from iterateEmbeddings() is the same recovery IndexingService
   // already provides for the repository index's 'rebuild-vectors' mode.
+  //
+  // Known gap: this check is size-only, not dimensions/modelId-aware. If the embedding provider
+  // changes (e.g. toggling YANDECODE_EMBEDDINGS=hash, or a future config change to
+  // rag.embeddingModel), the on-disk index and the stored embeddings in `memories.embedding` were
+  // both built with the OLD provider's dimensionality - a same-size rebuild here would hand
+  // wrong-dimension vectors to a VectorIndex constructed for the NEW dimensions. Detecting a
+  // provider switch is straightforward (compare provider.dimensions/modelId against the persisted
+  // vector_index_meta row), but a correct recovery requires RE-EMBEDDING every stored memory with
+  // the new provider, not just rebuilding the index shell from already-stored, now-incompatible
+  // vectors - that's a real feature (a memory re-embedding migration), not a safe one-line fix, so
+  // it's deliberately not attempted here. v0 does not support switching embedding providers for an
+  // existing memory store.
   if (index.stats().size !== memories.count()) {
     index.rebuild(
       (function* rebuildRecords() {
