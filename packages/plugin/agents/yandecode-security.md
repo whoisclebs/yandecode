@@ -2,7 +2,7 @@
 name: yandecode-security
 description: Read-only security review for changes touching authentication, authorization, cryptography, secrets, network boundaries, input validation, serialization or database permissions. Use only when the change touches one of those areas.
 model: inherit
-tools: Read, Grep, Glob, Bash(git diff *), Bash(git log *), mcp__yandecode__rag_search, mcp__yandecode__memory_search, mcp__yandecode__memory_store, mcp__yandecode__task_update, mcp__yandecode__message_send
+tools: Read, Grep, Glob, Bash(git diff *), Bash(git log *), mcp__yandecode__rag_search, mcp__yandecode__memory_search, mcp__yandecode__memory_store, mcp__yandecode__task_update, mcp__yandecode__message_send, mcp__yandecode__message_read
 mcpServers: yandecode
 skills: yandecode-context-rules, yandecode-worker-contract
 ---

@@ -80,7 +80,7 @@ describe('TaskRepository', () => {
     state.close();
   });
 
-  it('allows failed -> ready only while attempt < maxAttempts, then rejects', async () => {
+  it('automatically retries a failed task back to ready while attempt < maxAttempts, clearing completedAt', async () => {
     const { state, tasks, swarmId } = await setup();
     const [task] = await tasks.createMany([
       { swarmId, title: 't', description: 'd', role: 'implementer', maxAttempts: 2 },
@@ -88,12 +88,29 @@ describe('TaskRepository', () => {
     await tasks.updateStatus(task!.id, 'ready');
     await tasks.updateStatus(task!.id, 'claimed');
     await tasks.updateStatus(task!.id, 'running'); // attempt 1
-    await tasks.updateStatus(task!.id, 'failed');
-    const retried = await tasks.updateStatus(task!.id, 'ready'); // attempt(1) < maxAttempts(2): allowed
-    expect(retried.status).toBe('ready');
+    const afterFirstFailure = await tasks.updateStatus(task!.id, 'failed');
+    // attempt(1) < maxAttempts(2): the failed->ready retry happens automatically in the same call.
+    expect(afterFirstFailure.status).toBe('ready');
+    expect(afterFirstFailure.attempt).toBe(1);
+    expect(afterFirstFailure.completedAt).toBeNull();
+    state.close();
+  });
+
+  it('leaves a task failed (does not auto-retry) once attempts are exhausted', async () => {
+    const { state, tasks, swarmId } = await setup();
+    const [task] = await tasks.createMany([
+      { swarmId, title: 't', description: 'd', role: 'implementer', maxAttempts: 2 },
+    ]);
+    await tasks.updateStatus(task!.id, 'ready');
+    await tasks.updateStatus(task!.id, 'claimed');
+    await tasks.updateStatus(task!.id, 'running'); // attempt 1
+    await tasks.updateStatus(task!.id, 'failed'); // auto-retried to ready
     await tasks.updateStatus(task!.id, 'claimed');
     await tasks.updateStatus(task!.id, 'running'); // attempt 2
-    await tasks.updateStatus(task!.id, 'failed');
+    const afterSecondFailure = await tasks.updateStatus(task!.id, 'failed');
+    // attempt(2) >= maxAttempts(2): no more retries, stays failed.
+    expect(afterSecondFailure.status).toBe('failed');
+    expect(afterSecondFailure.completedAt).not.toBeNull();
     await expect(tasks.updateStatus(task!.id, 'ready')).rejects.toThrow(/MAX_ATTEMPTS_EXCEEDED/);
     state.close();
   });

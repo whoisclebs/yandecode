@@ -129,7 +129,7 @@ describe('handleHook: SubagentStop, WorktreeCreate/Remove, SessionEnd swarm clea
     });
   }
 
-  it('SubagentStop fails a still-running task whose ownerAgent matches the stopped agent id, and releases its leases', async () => {
+  it('SubagentStop fails (and, with attempts remaining, auto-retries to ready) a still-running task whose ownerAgent matches the stopped agent id, and releases its leases', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'yc-hook-subagent-'));
     writeFileSync(join(dir, 'yandecode.json'), '{}');
     const rt = openRuntime(dir);
@@ -150,9 +150,14 @@ describe('handleHook: SubagentStop, WorktreeCreate/Remove, SessionEnd swarm clea
     await handleHook('SubagentStop', { agent_id: task!.id }, rt);
 
     const after = service.getTask(task!.id)!;
-    expect(after.status).toBe('failed');
+    // Default maxAttempts is 2; this was attempt 1, so the failure->ready retry fires
+    // automatically as part of the same task_update call the hook makes.
+    expect(after.status).toBe('ready');
+    expect(after.attempt).toBe(1);
 
-    // Leases were released: a second task can now claim the same path.
+    // Leases were released (the hook's own task_update call targeted 'failed', which still
+    // releases leases regardless of the auto-retry that follows it): a second task can now
+    // claim the same path.
     const [other] = await service.taskCreate(swarm.id, [
       { ref: 'b', title: 'b', description: 'd', role: 'implementer', paths: ['src/x/**'] },
     ]);

@@ -190,38 +190,52 @@ export class TaskRepository {
     } = {},
   ): Promise<TaskRecord> {
     return this.state.write((db) => {
-      const row = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Row | undefined;
-      if (!row) throw new YandeCodeError('TASK_NOT_FOUND', `no task ${id}`);
-      const from = row.status;
-      if (!VALID_TASK_TRANSITIONS[from].includes(to)) {
-        throw new YandeCodeError(
-          'INVALID_TASK_TRANSITION',
-          `task ${id}: cannot transition from ${from} to ${to}`,
+      const applyTransition = (targetTo: TaskStatus, transitionOpts: typeof opts): Row => {
+        const row = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Row | undefined;
+        if (!row) throw new YandeCodeError('TASK_NOT_FOUND', `no task ${id}`);
+        const from = row.status;
+        if (!VALID_TASK_TRANSITIONS[from].includes(targetTo)) {
+          throw new YandeCodeError(
+            'INVALID_TASK_TRANSITION',
+            `task ${id}: cannot transition from ${from} to ${targetTo}`,
+          );
+        }
+        if (from === 'failed' && targetTo === 'ready' && row.attempt >= row.max_attempts) {
+          throw new YandeCodeError(
+            'MAX_ATTEMPTS_EXCEEDED',
+            `task ${id}: attempt ${row.attempt} >= maxAttempts ${row.max_attempts}`,
+          );
+        }
+        const now = nowIso();
+        const attempt = targetTo === 'running' ? row.attempt + 1 : row.attempt;
+        const startedAt = targetTo === 'running' && !row.started_at ? now : row.started_at;
+        // Non-terminal targets always clear completedAt rather than preserving a stale value from
+        // a prior terminal state (e.g. a failed->ready retry un-terminalizes the task).
+        const completedAt = TERMINAL_END.has(targetTo) ? now : null;
+        db.prepare(
+          'UPDATE tasks SET status = ?, attempt = ?, owner_agent = COALESCE(?, owner_agent), workspace_id = COALESCE(?, workspace_id), result_json = COALESCE(?, result_json), started_at = ?, completed_at = ? WHERE id = ?',
+        ).run(
+          targetTo,
+          attempt,
+          transitionOpts.ownerAgent ?? null,
+          transitionOpts.workspaceId ?? null,
+          transitionOpts.resultJson ?? null,
+          startedAt,
+          completedAt,
+          id,
         );
+        return db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Row;
+      };
+
+      let row = applyTransition(to, opts);
+      // A task that just failed with attempts remaining is automatically requeued: this is what
+      // makes the failed->ready transition in VALID_TASK_TRANSITIONS meaningful in practice, and
+      // what makes a retried task reappear in a future swarmNext batch without dispatcher
+      // intervention. Runs inside the same write transaction, so it's atomic with the failure.
+      if (to === 'failed' && row.attempt < row.max_attempts) {
+        row = applyTransition('ready', {});
       }
-      if (from === 'failed' && to === 'ready' && row.attempt >= row.max_attempts) {
-        throw new YandeCodeError(
-          'MAX_ATTEMPTS_EXCEEDED',
-          `task ${id}: attempt ${row.attempt} >= maxAttempts ${row.max_attempts}`,
-        );
-      }
-      const now = nowIso();
-      const attempt = to === 'running' ? row.attempt + 1 : row.attempt;
-      const startedAt = to === 'running' && !row.started_at ? now : row.started_at;
-      const completedAt = TERMINAL_END.has(to) ? now : row.completed_at;
-      db.prepare(
-        'UPDATE tasks SET status = ?, attempt = ?, owner_agent = COALESCE(?, owner_agent), workspace_id = COALESCE(?, workspace_id), result_json = COALESCE(?, result_json), started_at = ?, completed_at = ? WHERE id = ?',
-      ).run(
-        to,
-        attempt,
-        opts.ownerAgent ?? null,
-        opts.workspaceId ?? null,
-        opts.resultJson ?? null,
-        startedAt,
-        completedAt,
-        id,
-      );
-      return this.hydrate(db, db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Row);
+      return this.hydrate(db, row);
     });
   }
 

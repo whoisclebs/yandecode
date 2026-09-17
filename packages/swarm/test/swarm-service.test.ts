@@ -151,6 +151,30 @@ describe('SwarmService.swarmNext / taskUpdate', () => {
     state.close();
   });
 
+  it('re-offers a failed task in a future swarmNext batch once it auto-retries, without any manual dispatcher intervention', async () => {
+    const { state, service } = setup();
+    const swarm = await service.createSwarm({
+      title: 't',
+      goal: 'g',
+      strategy: 'adaptive',
+      maxAgents: 4,
+      sessionId: null,
+    });
+    const [task] = await service.taskCreate(swarm.id, [
+      { ref: 'a', title: 'a', description: 'd', role: 'implementer', maxAttempts: 2 },
+    ]);
+    await service.taskUpdate(task!.id, 'ready');
+    const [claimed] = await service.swarmNext(swarm.id);
+    expect(claimed!.taskId).toBe(task!.id);
+    await service.taskUpdate(task!.id, 'running');
+    const afterFailure = await service.taskUpdate(task!.id, 'failed');
+    expect(afterFailure.status).toBe('ready');
+
+    const secondBatch = await service.swarmNext(swarm.id);
+    expect(secondBatch.map((r) => r.taskId)).toEqual([task!.id]);
+    state.close();
+  });
+
   it('does not offer a task whose paths overlap a currently-claimed (not-yet-leased) task in the same swarmNext call', async () => {
     const { state, service } = setup();
     const swarm = await service.createSwarm({

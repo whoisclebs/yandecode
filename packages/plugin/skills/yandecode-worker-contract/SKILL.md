@@ -11,7 +11,7 @@ You were spawned with a `taskId` and `swarmId` in your prompt. The swarm state y
 
 `task_update({ taskId, status: 'claimed' })`.
 
-If your task carries `paths` (you'll write files), reserve them before touching anything: `workspace_reserve({ swarmId, taskId, patterns: <your paths>, holderAgent: taskId })`. If `granted` comes back `false`, another task holds a conflicting lease — do not fight over it: `task_update({ taskId, status: 'blocked' })` and stop; report this as your `FOLLOW_UP`.
+If your task carries `paths` (you'll write files), reserve them before touching anything: `workspace_reserve({ swarmId, taskId, patterns: <your paths>, holderAgent: taskId })`. If `granted` comes back `false`, another task holds a conflicting lease — do not fight over it: `task_update({ taskId, status: 'cancelled' })` (a `claimed` task can only move to `running` or `cancelled` — there is no `blocked` state to retreat to from here) and stop; report this as your `FOLLOW_UP` so the dispatcher can re-ready you once the conflict clears, per `yandecode-swarm-protocol`'s Failure section.
 
 ## 2. Start
 
@@ -29,11 +29,13 @@ Do the task, following your own agent's normal procedure (TDD for `implementer`/
 
 If you hit something the dispatcher or a sibling task needs to know before you finish — a blocking question, a dependency you didn't expect, a security finding — send it immediately, don't sit on it until the end: `message_send({ swarmId, from: taskId, to: 'dispatcher', type: 'question' | 'finding' | 'dependency' | 'warning', payload })`.
 
+If you sent a `question` and genuinely cannot proceed without the answer, poll for it with `message_read({ swarmId, toAgent: taskId })` before continuing — the dispatcher's `answer` is addressed to your own `taskId`, not broadcast, so nothing else will surface it to you.
+
 ## 6. Finish
 
 `workspace_release({ taskId })` if you reserved paths.
 
-Always call `task_update({ taskId, status: 'completed' | 'failed', resultJson: <compact JSON summary> })` — even on failure. A task left at `running` blocks every task that depends on it, forever.
+**Always call `task_update({ taskId, status: 'completed' | 'failed', resultJson: <compact JSON summary> })` yourself, on every exit path — including inside error handling, before you stop for any reason.** This is the reliable mechanism for reporting your outcome. A `SubagentStop` hook exists as a best-effort backstop for the case where you're killed or crash before you can self-report, but it depends on Claude Code hook payload fields that aren't fully verified — do not rely on it as your primary reporting path. A task left at `running` with no self-report blocks every task that depends on it, potentially forever.
 
 ## 7. Learn
 
