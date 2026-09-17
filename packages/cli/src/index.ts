@@ -10,3 +10,4 @@ export {
 } from './mcp/server.js';
 export { createRetrieval, type Retrieval } from './retrieval-runtime.js';
 export { formatRagResults } from './rag/format.js';
+export { resolveClaudeBin, runStart, type StartResult } from './commands/start.js';
