@@ -40,3 +40,6 @@ export {
   type VectorIndexMeta,
 } from './persistence/repositories/index-meta.js';
 export { EventLog } from './events/event-log.js';
+export { blobToVector, vectorToBlob } from './persistence/vectors.js';
+export { splitIdentifier, toFtsQuery } from './persistence/fts-query.js';
+export { DocumentRepository, type ChunkInput, type ChunkRecord, type DocumentInput } from './persistence/repositories/documents.js';

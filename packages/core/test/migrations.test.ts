@@ -84,4 +84,12 @@ describe('migrations', () => {
       { name: 'repository', next_id: 1 },
     ]);
   });
+
+  it('migration 0002 adds the chunks.embedding column', () => {
+    const db = openDatabase(':memory:');
+    runMigrations(db);
+    const cols = (db.prepare('PRAGMA table_info(chunks)').all() as { name: string }[]).map((c) => c.name);
+    expect(cols).toContain('embedding');
+    expect(SCHEMA_VERSION).toBe(2);
+  });
 });
