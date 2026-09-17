@@ -18,7 +18,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "tsc -b && vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:slow": "tsc -b && vitest run --config vitest.slow.config.ts",
+    "benchmark:rag": "tsc -b && tsx benchmarks/rag/run.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -26,6 +28,7 @@
     "eslint": "^10.10.0",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.7",
+    "tsx": "^4.23.13",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.70.0",
     "vitest": "^5.0.1"

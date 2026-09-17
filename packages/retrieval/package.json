@@ -23,6 +23,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@yandecode/core": "0.1.0"
+    "@huggingface/transformers": "^4.3.0",
+    "@yandecode/core": "0.1.0",
+    "ignore": "^7.0.9",
+    "tree-sitter-wasms": "0.1.13",
+    "usearch": "^2.26.2",
+    "web-tree-sitter": "0.20.8"
   }
 }
