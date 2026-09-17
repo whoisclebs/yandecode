@@ -3,7 +3,9 @@ import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', '**/.yandecode/**', 'coverage/**', 'fixtures/**'] },
+  {
+    ignores: ['**/dist/**', '**/node_modules/**', '**/.yandecode/**', 'coverage/**', 'fixtures/**'],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {
@@ -19,6 +21,16 @@ export default tseslint.config(
   {
     files: ['**/*.js', '**/*.mjs', 'vitest.config.ts', 'eslint.config.js'],
     ...tseslint.configs.disableTypeChecked,
+  },
+  {
+    files: ['scripts/**/*.js', 'scripts/**/*.mjs'],
+    languageOptions: {
+      parserOptions: { project: false },
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+      },
+    },
   },
   prettier,
 );

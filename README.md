@@ -146,8 +146,9 @@ or anything you've edited since; `--purge` also deletes `.yandecode/`.
 - `.claude/agents/yandecode-*.md` — dispatcher, scout, implementer, tester, reviewer, security, researcher
 - `.claude/skills/yandecode-*/SKILL.md` — context rules and delegation protocol
 - `.claude/settings.json` — `SessionStart`, `PostToolUse`, `SessionEnd` hooks calling `yandecode hook`
-- `.mcp.json` — the `yandecode` MCP server (`rag_search`: hybrid lexical + semantic
-  search over the indexed repository; `rag_status`: index readiness)
+- `.mcp.json` — the `yandecode` MCP server: 15 tools — `rag_search`/`rag_status`;
+  `swarm_create`/`swarm_status`/`swarm_next`/`swarm_cancel`; `task_create`/`task_list`/`task_update`;
+  `message_send`/`message_read`; `workspace_reserve`/`workspace_release`; `memory_store`/`memory_search`
 - `CLAUDE.md` — a marked block explaining how to use retrieval
 - `.yandecode/` — local state (gitignored); `yandecode.json` — shareable config
 
@@ -175,10 +176,11 @@ Both download and cache the Arctic Embed XS model on first run.
       (agents/skills/hooks), and the CLI (`init`, `uninstall`, `doctor`, `status`, `hook`, `mcp serve`).
 - [x] **Part 2 — Retrieval**: local embeddings, Tree-sitter chunking, the USearch vector index, hybrid
       (lexical + semantic) search, and the `index` / `rag search` / `start` commands.
-- [ ] **Part 3 — Swarm, Router & Memory**: task decomposition and a deterministic scheduler, parallel
+- [x] **Part 3 — Swarm, Router & Memory**: task decomposition and a deterministic scheduler, parallel
       worker delegation through Claude Code's native Agent tool (never headless processes — see
       [ADR-010](docs/adr/ADR-010-subagents-first.md)), and a cross-session learning loop so agents
-      retain what they learned between sessions.
+      retain what they learned between sessions ([ADR-011](docs/adr/ADR-011-rag-memory-separation.md),
+      [ADR-012](docs/adr/ADR-012-worktree-isolation-strategy.md)).
 
 See the [open issues](https://github.com/whoisclebs/yandecode/issues) for a full list of proposed
 features and known issues.
