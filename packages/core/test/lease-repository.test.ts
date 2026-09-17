@@ -14,7 +14,7 @@ async function setup() {
   const leases = new LeaseRepository(state);
   const swarm = await swarms.create({ title: 't', goal: 'g', strategy: 'adaptive', maxAgents: 4, sessionId: null });
   const [task] = await tasks.createMany([{ swarmId: swarm.id, title: 't', description: 'd', role: 'implementer' }]);
-  return { state, leases, swarmId: swarm.id, taskId: task!.id };
+  return { state, leases, swarms, tasks, swarmId: swarm.id, taskId: task!.id };
 }
 
 describe('LeaseRepository', () => {
@@ -47,14 +47,34 @@ describe('LeaseRepository', () => {
     state.close();
   });
 
-  it('releaseAllForTask and releaseAllForSwarm release exactly their own leases', async () => {
-    const { state, leases, swarmId, taskId } = await setup();
-    const a = await leases.create({ swarmId, taskId, pattern: 'a/**', holderAgent: 'x' });
-    const b = await leases.create({ swarmId, taskId, pattern: 'b/**', holderAgent: 'x' });
+  it('renew throws YandeCodeError for a non-existent lease id', async () => {
+    const { state, leases } = await setup();
+    await expect(leases.renew('does-not-exist')).rejects.toThrow('LEASE_NOT_FOUND');
+    state.close();
+  });
+
+  it('releaseAllForTask releases only that task\'s leases, leaving a sibling task\'s leases active', async () => {
+    const { state, leases, tasks, swarmId, taskId } = await setup();
+    const [otherTask] = await tasks.createMany([{ swarmId, title: 't2', description: 'd2', role: 'implementer' }]);
+    const mine = await leases.create({ swarmId, taskId, pattern: 'a/**', holderAgent: 'x' });
+    const theirs = await leases.create({ swarmId, taskId: otherTask!.id, pattern: 'b/**', holderAgent: 'x' });
     await leases.releaseAllForTask(taskId);
+    const active = leases.listActive(swarmId).map((l) => l.id);
+    expect(active).toEqual([theirs.id]);
+    void mine;
+    state.close();
+  });
+
+  it('releaseAllForSwarm releases only that swarm\'s leases, leaving another swarm\'s leases active', async () => {
+    const { state, leases, swarms, tasks, swarmId, taskId } = await setup();
+    const otherSwarm = await swarms.create({ title: 't2', goal: 'g2', strategy: 'adaptive', maxAgents: 4, sessionId: null });
+    const [otherTask] = await tasks.createMany([{ swarmId: otherSwarm.id, title: 't', description: 'd', role: 'implementer' }]);
+    const mine = await leases.create({ swarmId, taskId, pattern: 'a/**', holderAgent: 'x' });
+    const theirs = await leases.create({ swarmId: otherSwarm.id, taskId: otherTask!.id, pattern: 'b/**', holderAgent: 'x' });
+    await leases.releaseAllForSwarm(swarmId);
     expect(leases.listActive(swarmId)).toHaveLength(0);
-    void a;
-    void b;
+    expect(leases.listActive(otherSwarm.id).map((l) => l.id)).toEqual([theirs.id]);
+    void mine;
     state.close();
   });
 });

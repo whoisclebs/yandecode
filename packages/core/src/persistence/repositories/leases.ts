@@ -1,5 +1,6 @@
 import { newId, nowIso } from '../../ids.js';
 import type { StateService } from '../state-service.js';
+import { YandeCodeError } from '../../errors.js';
 
 export const LEASE_TTL_MS = 15 * 60 * 1000;
 
@@ -60,7 +61,8 @@ export class LeaseRepository {
   renew(id: string, ttlMs: number = LEASE_TTL_MS): Promise<LeaseRecord> {
     return this.state.write((db) => {
       const expiresAt = new Date(Date.now() + ttlMs).toISOString();
-      db.prepare('UPDATE leases SET expires_at = ? WHERE id = ?').run(expiresAt, id);
+      const result = db.prepare('UPDATE leases SET expires_at = ? WHERE id = ?').run(expiresAt, id);
+      if (result.changes === 0) throw new YandeCodeError('LEASE_NOT_FOUND', `no lease ${id}`);
       return fromRow(db.prepare('SELECT * FROM leases WHERE id = ?').get(id) as Row);
     });
   }

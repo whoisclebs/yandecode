@@ -2,9 +2,14 @@ import { minimatch } from 'minimatch';
 
 function globBaseSegments(pattern: string): string[] {
   const wildcardIndex = pattern.search(/[*?[{]/);
-  const base = wildcardIndex === -1 ? pattern : pattern.slice(0, wildcardIndex);
-  const trimmed = base.endsWith('/') ? base.slice(0, -1) : base;
-  return trimmed.split('/').filter((s) => s.length > 0);
+  if (wildcardIndex === -1) {
+    const trimmed = pattern.endsWith('/') ? pattern.slice(0, -1) : pattern;
+    return trimmed.split('/').filter((s) => s.length > 0);
+  }
+  const base = pattern.slice(0, wildcardIndex);
+  const lastSlash = base.lastIndexOf('/');
+  const complete = lastSlash === -1 ? '' : base.slice(0, lastSlash);
+  return complete.split('/').filter((s) => s.length > 0);
 }
 
 export function leaseConflicts(a: string, b: string): boolean {

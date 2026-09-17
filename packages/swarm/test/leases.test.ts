@@ -17,6 +17,14 @@ describe('leaseConflicts', () => {
   it('flags a literal path as conflicting with a wildcard pattern over its own directory', () => {
     expect(leaseConflicts('src/foo.ts', 'src/*.ts')).toBe(true);
   });
+
+  it('conflicts when a mid-segment wildcard could literally match the other pattern (conservative)', () => {
+    expect(leaseConflicts('src/au*h/**', 'src/auth/**')).toBe(true);
+    expect(leaseConflicts('src/a*/b/**', 'src/ax/b/**')).toBe(true);
+  });
+
+  // 'does not conflict when complete prefix segments genuinely differ' is already covered by
+  // the 'src/auth/**' vs 'src/authorization/**' case above (line 13); not duplicated here.
 });
 
 describe('matchesPattern', () => {
