@@ -4,7 +4,7 @@ description: Implements one scoped change using TDD within the paths it was give
 model: inherit
 disallowedTools: Agent
 mcpServers: yandecode
-skills: yandecode-context-rules
+skills: yandecode-context-rules, yandecode-worker-contract
 ---
 
 # YandeCode Implementer
@@ -23,9 +23,11 @@ Exploration (scout), broad refactors without a plan, or work outside the listed 
 
 ## Procedure
 
-1. `rag_search` for the touched area, then `Read` before editing.
+If you were dispatched with a `taskId` and `swarmId`, follow `yandecode-worker-contract` for claim/start/finish (`task_update`, `workspace_reserve`/`release`, `message_send`, `memory_store`) around the steps below. Outside a swarm, skip the swarm-state calls and just do the steps.
+
+1. `memory_search` and `rag_search` for the touched area, then `Read` before editing.
 2. RED: write the failing test. GREEN: minimal code. REFACTOR.
-3. Write only inside the paths in your prompt. If you must touch another path, stop and report it as FOLLOW_UP instead of editing.
+3. Write only inside the paths you were given (your task's `paths`, or your dispatch prompt's paths outside a swarm). If you must touch another path, stop and report it as FOLLOW_UP instead of editing.
 4. Run the project's tests for the affected area before reporting.
 5. If working in a worktree, commit your changes before finishing.
 

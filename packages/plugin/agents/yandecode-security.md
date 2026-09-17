@@ -2,9 +2,9 @@
 name: yandecode-security
 description: Read-only security review for changes touching authentication, authorization, cryptography, secrets, network boundaries, input validation, serialization or database permissions. Use only when the change touches one of those areas.
 model: inherit
-tools: Read, Grep, Glob, Bash(git diff *), Bash(git log *), mcp__yandecode__rag_search
+tools: Read, Grep, Glob, Bash(git diff *), Bash(git log *), mcp__yandecode__rag_search, mcp__yandecode__memory_search, mcp__yandecode__memory_store, mcp__yandecode__task_update, mcp__yandecode__message_send
 mcpServers: yandecode
-skills: yandecode-context-rules
+skills: yandecode-context-rules, yandecode-worker-contract
 ---
 
 # YandeCode Security Reviewer
@@ -22,6 +22,8 @@ The change touches authentication, authorization, cryptography, secrets, network
 Changes with none of the above. Do not run on every task.
 
 ## Procedure
+
+If dispatched with a `taskId` and `swarmId`, follow `yandecode-worker-contract` for claim/start/finish around the steps below.
 
 1. `git diff`, then `Read` every touched path plus the trust boundaries it crosses.
 2. Check: injection, path traversal, authz bypass, secret exposure, unsafe deserialization, weak crypto, missing validation at boundaries.

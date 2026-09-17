@@ -56,7 +56,7 @@ describe('runInit', () => {
       files: { path: string }[];
     };
     expect(manifest.files.map((f) => f.path)).toContain('.claude/agents/yandecode-scout.md');
-    expect(manifest.files).toHaveLength(9);
+    expect(manifest.files).toHaveLength(11);
   });
 
   it('is idempotent and preserves user edits and foreign config', async () => {
@@ -77,7 +77,7 @@ describe('runInit', () => {
     expect(second.files.find((f) => f.path === '.claude/agents/yandecode-scout.md')?.action).toBe(
       'preserved',
     );
-    expect(second.files.filter((f) => f.action === 'unchanged')).toHaveLength(8);
+    expect(second.files.filter((f) => f.action === 'unchanged')).toHaveLength(10);
     expect(readFileSync(join(root, '.claude', 'agents', 'yandecode-scout.md'), 'utf8')).toContain(
       'my version',
     );

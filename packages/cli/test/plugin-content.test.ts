@@ -36,24 +36,19 @@ describe('plugin content', () => {
     }
   });
 
-  it('never references swarm or memory MCP tools in v0', () => {
-    for (const file of [
-      ...content.agents.map((a) => a.file),
-      ...content.skills.map((s) => s.file),
-    ]) {
-      expect(readFileSync(file, 'utf8')).not.toMatch(
-        /\b(swarm_|task_create|task_update|message_send|memory_store|memory_search|workspace_reserve)\b/,
-      );
-    }
-  });
-
-  it('ships two skills with descriptions', () => {
+  it('ships skills with descriptions', () => {
     expect(content.skills.map((s) => s.name)).toEqual([...SKILL_NAMES]);
     for (const skill of content.skills) {
       const fm = parseFrontmatter(readFileSync(skill.file, 'utf8'));
       expect(fm.name).toBe(skill.name);
       expect(fm.description?.length ?? 0).toBeGreaterThan(20);
     }
+  });
+
+  it('lists the swarm-protocol and worker-contract skills alongside the original two', () => {
+    expect(content.skills.map((s) => s.name)).toEqual([...SKILL_NAMES]);
+    expect(SKILL_NAMES).toContain('yandecode-swarm-protocol');
+    expect(SKILL_NAMES).toContain('yandecode-worker-contract');
   });
 
   it('declares hooks that call yandecode hook <event> with a 10 s timeout', () => {
@@ -98,5 +93,35 @@ describe('plugin content', () => {
       name: 'x',
       description: 'a: b',
     });
+  });
+});
+
+describe('swarm-aware agent prompts', () => {
+  it('the dispatcher references the real swarm and memory MCP tools by name', () => {
+    const content = loadPluginContent();
+    const dispatcher = readFileSync(content.agents.find((a) => a.name === 'yandecode-dispatcher')!.file, 'utf8');
+    for (const tool of ['swarm_create', 'task_create', 'swarm_next', 'swarm_status', 'memory_search', 'memory_store']) {
+      expect(dispatcher).toContain(tool);
+    }
+  });
+
+  it('implementer and tester reference the worker-side task/workspace/message tools', () => {
+    const content = loadPluginContent();
+    for (const name of ['yandecode-implementer', 'yandecode-tester']) {
+      const body = readFileSync(content.agents.find((a) => a.name === name)!.file, 'utf8');
+      for (const tool of ['task_update', 'workspace_reserve', 'message_send']) {
+        expect(body).toContain(tool);
+      }
+    }
+  });
+
+  it('the four read-only agents gain memory/message/task-update tools in their frontmatter tool list', () => {
+    const content = loadPluginContent();
+    for (const name of ['yandecode-scout', 'yandecode-reviewer', 'yandecode-security', 'yandecode-researcher']) {
+      const body = readFileSync(content.agents.find((a) => a.name === name)!.file, 'utf8');
+      for (const tool of ['mcp__yandecode__memory_search', 'mcp__yandecode__task_update', 'mcp__yandecode__message_send']) {
+        expect(body).toContain(tool);
+      }
+    }
   });
 });

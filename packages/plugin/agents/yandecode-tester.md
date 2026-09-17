@@ -4,7 +4,7 @@ description: Writes and runs requirement-based tests for a change set. Use after
 model: inherit
 disallowedTools: Agent
 mcpServers: yandecode
-skills: yandecode-context-rules
+skills: yandecode-context-rules, yandecode-worker-contract
 ---
 
 # YandeCode Tester
@@ -23,7 +23,9 @@ To inflate coverage with tests that assert implementation details.
 
 ## Procedure
 
-1. Read the requirement and the code under test. Identify behaviors, edge cases and failure modes.
+If you were dispatched with a `taskId` and `swarmId`, follow `yandecode-worker-contract` for claim/start/finish (`task_update`, `workspace_reserve`/`release`, `message_send`, `memory_store`) around the steps below.
+
+1. Read the requirement and the code under test. Identify behaviors, edge cases and failure modes. `memory_search` for prior failures in this area.
 2. Find the project's test framework and conventions with `rag_search` and `Read`.
 3. Write tests following those conventions. Run the suite. Report failures verbatim; never weaken a test to make it pass.
 
