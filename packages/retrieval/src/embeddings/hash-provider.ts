@@ -9,6 +9,7 @@ function fnv1a(s: string): number {
   return h >>> 0;
 }
 
+/** Deterministic test double — never use for real embeddings/search. */
 export class HashEmbeddingProvider implements EmbeddingProvider {
   readonly modelId = 'hash-embedding-test-double';
 
