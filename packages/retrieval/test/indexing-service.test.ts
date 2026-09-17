@@ -23,7 +23,7 @@ function makeService(): IndexingService {
     indexRepo: new IndexRepository(state),
     provider,
     chunker: new LineChunker(provider),
-    events: new EventLog(new EventRepository(state), join(root, 'events.jsonl')),
+    events: new EventLog(new EventRepository(state), join(root, '.yandecode', 'events.jsonl')),
     openIndex: (file) => new USearchVectorIndex({ dimensions: provider.dimensions, file }),
   });
 }
@@ -101,7 +101,7 @@ describe('IndexingService', () => {
       indexRepo: new IndexRepository(state),
       provider,
       chunker: new LineChunker(provider),
-      events: new EventLog(new EventRepository(state), join(root, 'events.jsonl')),
+      events: new EventLog(new EventRepository(state), join(root, '.yandecode', 'events.jsonl')),
       openIndex: () => {
         throw new Error('simulated native load failure');
       },

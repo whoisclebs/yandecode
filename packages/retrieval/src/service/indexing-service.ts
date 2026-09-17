@@ -11,12 +11,6 @@ import type { VectorIndex } from '../vector/types.js';
 
 const INDEX_NAME: IndexName = 'repository';
 const EMBED_BATCH = 32;
-// Housekeeping files YandeCode itself may write directly under `root` (e.g. an EventLog
-// wired outside `.yandecode/`, as in tests). Production wiring keeps these under the
-// already-ignored `.yandecode/` tree, but scanRepository has no way to know about a log
-// file path chosen by the caller, so IndexingService excludes well-known reserved names
-// itself to avoid re-indexing its own output on the next run.
-const RESERVED_RELATIVE_PATHS = new Set(['events.jsonl']);
 
 export interface IndexingServiceDeps {
   root: string;
@@ -105,7 +99,7 @@ export class IndexingService {
       for (const doc of this.deps.documents.listDocuments()) await this.deps.documents.deleteDocument(doc.path);
     }
 
-    const scanned = (await scanRepository(this.deps.root)).filter((f) => !RESERVED_RELATIVE_PATHS.has(f.relPath));
+    const scanned = await scanRepository(this.deps.root);
     onProgress?.({ phase: 'scan', done: scanned.length, total: scanned.length });
     const existing = this.deps.documents.listDocuments().map((d) => ({ path: d.path, contentHash: d.contentHash }));
     const diff = diffScan(scanned, existing);
