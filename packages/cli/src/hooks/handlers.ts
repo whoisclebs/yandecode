@@ -57,7 +57,7 @@ export async function handleHook(event: string, rawInput: unknown, rt: RuntimeCo
       throw error;
     }
     const rel = toRelativePosix(rt.paths.root, abs);
-    if (rel === '.yandecode' || rel.startsWith('.yandecode/')) return { stdout: '' };
+    if (rel === '' || rel === '.yandecode' || rel.startsWith('.yandecode/')) return { stdout: '' };
     await rt.index.markDirty(rel, input.tool_name ?? 'unknown');
     await rt.events.emit({ event: 'file_dirty', data: { path: rel, tool: input.tool_name ?? 'unknown' } });
     return { stdout: '' };
@@ -100,6 +100,12 @@ export async function runHookCommand(event: string, stdinText: string, cwd: stri
     if (rt) logHookError(rt.paths.root, event, error);
     return { stdout: '', exitCode: 0 };
   } finally {
-    rt?.close();
+    if (rt) {
+      try {
+        rt.close();
+      } catch {
+        /* close() failures must never escape */
+      }
+    }
   }
 }
