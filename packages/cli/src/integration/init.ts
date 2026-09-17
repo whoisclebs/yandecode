@@ -1,0 +1,96 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import {
+  StateService,
+  ensureWorkspaceDirs,
+  workspacePathsFor,
+  writeDefaultConfig,
+  writeFileAtomic,
+} from '@yandecode/core';
+import { resolveLauncher, type Launcher } from '../launcher.js';
+import { loadPluginContent } from '../plugin-content.js';
+import { VERSION } from '../version.js';
+import { claudeMdBlock, upsertBlock } from './claude-md.js';
+import { ensureGitignoreEntry } from './gitignore.js';
+import { readManifest, writeManifest, type ManagedFile } from './manifest.js';
+import { materializeFile, type MaterializeResult } from './materialize.js';
+import { addMcpServer } from './mcp-config.js';
+import { hookEntriesFor, mergeHooks } from './settings.js';
+
+export interface InitOptions {
+  force?: boolean;
+  launcher?: Launcher;
+}
+
+export interface InitReport {
+  root: string;
+  files: MaterializeResult[];
+  configCreated: boolean;
+  settingsUpdated: boolean;
+  mcpUpdated: boolean;
+  claudeMdUpdated: boolean;
+  gitignoreUpdated: boolean;
+}
+
+function readJsonOr(file: string, fallback: Record<string, unknown>): Record<string, unknown> {
+  if (!existsSync(file)) return fallback;
+  return JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
+}
+
+function writeJsonIfChanged(file: string, next: Record<string, unknown>): boolean {
+  const text = `${JSON.stringify(next, null, 2)}\n`;
+  if (existsSync(file) && readFileSync(file, 'utf8') === text) return false;
+  writeFileAtomic(file, text);
+  return true;
+}
+
+function writeTextIfChanged(file: string, next: string): boolean {
+  if (existsSync(file) && readFileSync(file, 'utf8') === next) return false;
+  writeFileAtomic(file, next);
+  return true;
+}
+
+export function runInit(cwd: string, options: InitOptions = {}): Promise<InitReport> {
+  const root = cwd;
+  const paths = workspacePathsFor(root);
+  const launcher = options.launcher ?? resolveLauncher();
+  const force = options.force ?? false;
+  const plugin = loadPluginContent();
+
+  const configCreated = writeDefaultConfig(root);
+  ensureWorkspaceDirs(paths);
+  StateService.open(paths.stateDb).close();
+
+  const previous = readManifest(paths.managedManifest);
+  const prevByPath = new Map<string, ManagedFile>((previous?.files ?? []).map((f) => [f.path, f]));
+
+  const files: MaterializeResult[] = [];
+  for (const agent of plugin.agents) {
+    const rel = `.claude/agents/${agent.name}.md`;
+    files.push(materializeFile(root, rel, readFileSync(agent.file, 'utf8'), prevByPath.get(rel), force));
+  }
+  for (const skill of plugin.skills) {
+    const rel = `.claude/skills/${skill.name}/SKILL.md`;
+    files.push(materializeFile(root, rel, readFileSync(skill.file, 'utf8'), prevByPath.get(rel), force));
+  }
+
+  const settingsFile = join(root, '.claude', 'settings.json');
+  const entries = hookEntriesFor(launcher, JSON.parse(readFileSync(plugin.hooksFile, 'utf8')));
+  const settingsUpdated = writeJsonIfChanged(settingsFile, mergeHooks(readJsonOr(settingsFile, {}), entries));
+
+  const mcpFile = join(root, '.mcp.json');
+  const mcpUpdated = writeJsonIfChanged(mcpFile, addMcpServer(readJsonOr(mcpFile, {}), launcher));
+
+  const claudeMd = join(root, 'CLAUDE.md');
+  const claudeMdUpdated = writeTextIfChanged(claudeMd, upsertBlock(existsSync(claudeMd) ? readFileSync(claudeMd, 'utf8') : '', claudeMdBlock()));
+
+  const gitignore = join(root, '.gitignore');
+  const gitignoreUpdated = writeTextIfChanged(gitignore, ensureGitignoreEntry(existsSync(gitignore) ? readFileSync(gitignore, 'utf8') : '', '.yandecode/'));
+
+  writeManifest(paths.managedManifest, {
+    version: VERSION,
+    files: files.map((f) => ({ path: f.path, hash: f.action === 'preserved' ? (prevByPath.get(f.path)?.hash ?? f.hash) : f.hash })),
+  });
+
+  return Promise.resolve({ root, files, configCreated, settingsUpdated, mcpUpdated, claudeMdUpdated, gitignoreUpdated });
+}
