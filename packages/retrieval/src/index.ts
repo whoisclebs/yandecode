@@ -18,3 +18,6 @@ export { TreeSitterChunker } from './chunking/tree-sitter-chunker.js';
 export { ChunkerRouter, createDefaultChunker } from './chunking/router.js';
 export { buildIgnore, DEFAULT_IGNORED_DIRS, isProbablyBinary, MAX_FILE_BYTES, SECRET_PATTERNS } from './scanner/rules.js';
 export { diffScan, scanRepository, type DiffResult, type ExistingDoc, type ScannedFile } from './scanner/scanner.js';
+export { generationFileName, listGenerations, removeOtherGenerations } from './vector/generations.js';
+export type { VectorHit, VectorIndex, VectorIndexStats, VectorRecord } from './vector/types.js';
+export { USearchVectorIndex, type USearchVectorIndexOptions } from './vector/usearch-index.js';
