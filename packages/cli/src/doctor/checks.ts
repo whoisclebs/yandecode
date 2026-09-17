@@ -31,15 +31,26 @@ export interface DoctorDeps {
 }
 
 export function defaultProbeVersion(cmd: string, args: string[]): string | null {
-  const r = spawnSync(cmd, args, { encoding: 'utf8', timeout: 5000, shell: process.platform === 'win32' });
+  const r = spawnSync(cmd, args, {
+    encoding: 'utf8',
+    timeout: 5000,
+    shell: process.platform === 'win32',
+  });
   return r.status === 0 ? r.stdout.trim() : null;
 }
 
 const INIT_FIX = 'yandecode init';
 
-function toolCheck(name: string, cmd: string, probe: DoctorDeps['probeVersion'], fix: string): CheckResult {
+function toolCheck(
+  name: string,
+  cmd: string,
+  probe: DoctorDeps['probeVersion'],
+  fix: string,
+): CheckResult {
   const v = probe(cmd, ['--version']);
-  return v ? { name, status: 'ok', detail: v.split('\n')[0] ?? v } : { name, status: 'fail', detail: `${cmd} not found on PATH`, fix };
+  return v
+    ? { name, status: 'ok', detail: v.split('\n')[0] ?? v }
+    : { name, status: 'fail', detail: `${cmd} not found on PATH`, fix };
 }
 
 function notInitialized(name: string): CheckResult {
@@ -52,15 +63,37 @@ export function runDoctor(deps: DoctorDeps): CheckResult[] {
   results.push(
     major >= 22
       ? { name: 'Node.js', status: 'ok', detail: deps.nodeVersion }
-      : { name: 'Node.js', status: 'fail', detail: `${deps.nodeVersion} (need >= 22)`, fix: 'install Node.js 22 or newer' },
+      : {
+          name: 'Node.js',
+          status: 'fail',
+          detail: `${deps.nodeVersion} (need >= 22)`,
+          fix: 'install Node.js 22 or newer',
+        },
   );
   results.push(toolCheck('npm', 'npm', deps.probeVersion, 'install npm (ships with Node.js)'));
-  results.push(toolCheck('Claude Code', 'claude', deps.probeVersion, 'install Claude Code: https://code.claude.com/docs/en/setup'));
+  results.push(
+    toolCheck(
+      'Claude Code',
+      'claude',
+      deps.probeVersion,
+      'install Claude Code: https://code.claude.com/docs/en/setup',
+    ),
+  );
   results.push(toolCheck('Git', 'git', deps.probeVersion, 'install git'));
   results.push({ name: 'YandeCode', status: 'ok', detail: deps.yandecodeVersion });
 
   const paths = resolveWorkspace(deps.cwd);
-  const projectChecks = ['Config', 'Managed files', 'Hooks', 'MCP', 'CLAUDE.md', 'SQLite', 'WAL', 'Schema', 'FTS5'];
+  const projectChecks = [
+    'Config',
+    'Managed files',
+    'Hooks',
+    'MCP',
+    'CLAUDE.md',
+    'SQLite',
+    'WAL',
+    'Schema',
+    'FTS5',
+  ];
   if (!paths) {
     for (const name of projectChecks) results.push(notInitialized(name));
     results.push({ name: 'Repository index', status: 'skip', detail: 'not built yet' });
@@ -72,12 +105,22 @@ export function runDoctor(deps: DoctorDeps): CheckResult[] {
     loadConfig(paths.root);
     results.push({ name: 'Config', status: 'ok', detail: paths.configFile });
   } catch (error) {
-    results.push({ name: 'Config', status: 'fail', detail: (error as Error).message, fix: 'fix yandecode.json or delete it and run yandecode init' });
+    results.push({
+      name: 'Config',
+      status: 'fail',
+      detail: (error as Error).message,
+      fix: 'fix yandecode.json or delete it and run yandecode init',
+    });
   }
 
   const manifest = readManifest(paths.managedManifest);
   if (!manifest) {
-    results.push({ name: 'Managed files', status: 'fail', detail: 'managed.json missing', fix: INIT_FIX });
+    results.push({
+      name: 'Managed files',
+      status: 'fail',
+      detail: 'managed.json missing',
+      fix: INIT_FIX,
+    });
   } else {
     const missing: string[] = [];
     const edited: string[] = [];
@@ -86,27 +129,57 @@ export function runDoctor(deps: DoctorDeps): CheckResult[] {
       if (!existsSync(abs)) missing.push(f.path);
       else if (sha256(readFileSync(abs)) !== f.hash) edited.push(f.path);
     }
-    if (missing.length > 0) results.push({ name: 'Managed files', status: 'fail', detail: `missing: ${missing.join(', ')}`, fix: INIT_FIX });
-    else if (edited.length > 0) results.push({ name: 'Managed files', status: 'warn', detail: `edited locally: ${edited.join(', ')}` });
-    else results.push({ name: 'Managed files', status: 'ok', detail: `${manifest.files.length} files (v${manifest.version})` });
+    if (missing.length > 0)
+      results.push({
+        name: 'Managed files',
+        status: 'fail',
+        detail: `missing: ${missing.join(', ')}`,
+        fix: INIT_FIX,
+      });
+    else if (edited.length > 0)
+      results.push({
+        name: 'Managed files',
+        status: 'warn',
+        detail: `edited locally: ${edited.join(', ')}`,
+      });
+    else
+      results.push({
+        name: 'Managed files',
+        status: 'ok',
+        detail: `${manifest.files.length} files (v${manifest.version})`,
+      });
   }
 
   const settingsFile = join(paths.root, '.claude', 'settings.json');
-  const settings = existsSync(settingsFile) ? (JSON.parse(readFileSync(settingsFile, 'utf8')) as { hooks?: Record<string, unknown[]> }) : {};
+  const settings = existsSync(settingsFile)
+    ? (JSON.parse(readFileSync(settingsFile, 'utf8')) as { hooks?: Record<string, unknown[]> })
+    : {};
   const hookText = JSON.stringify(settings.hooks ?? {});
   const missingHooks = HOOK_EVENTS.filter((e) => !hookText.includes(`yandecode hook ${e}`));
   results.push(
     missingHooks.length === 0
       ? { name: 'Hooks', status: 'ok', detail: HOOK_EVENTS.join(', ') }
-      : { name: 'Hooks', status: 'fail', detail: `missing: ${missingHooks.join(', ')}`, fix: INIT_FIX },
+      : {
+          name: 'Hooks',
+          status: 'fail',
+          detail: `missing: ${missingHooks.join(', ')}`,
+          fix: INIT_FIX,
+        },
   );
 
   const mcpFile = join(paths.root, '.mcp.json');
-  const mcp = existsSync(mcpFile) ? (JSON.parse(readFileSync(mcpFile, 'utf8')) as { mcpServers?: Record<string, unknown> }) : {};
+  const mcp = existsSync(mcpFile)
+    ? (JSON.parse(readFileSync(mcpFile, 'utf8')) as { mcpServers?: Record<string, unknown> })
+    : {};
   results.push(
     mcp.mcpServers?.yandecode
       ? { name: 'MCP', status: 'ok', detail: 'yandecode server registered in .mcp.json' }
-      : { name: 'MCP', status: 'fail', detail: 'yandecode server missing from .mcp.json', fix: INIT_FIX },
+      : {
+          name: 'MCP',
+          status: 'fail',
+          detail: 'yandecode server missing from .mcp.json',
+          fix: INIT_FIX,
+        },
   );
 
   const claudeMd = join(paths.root, 'CLAUDE.md');
@@ -126,17 +199,31 @@ export function runDoctor(deps: DoctorDeps): CheckResult[] {
       const db = openDatabase(paths.stateDb);
       results.push({ name: 'SQLite', status: 'ok', detail: paths.stateDb });
       const mode = db.pragma('journal_mode', { simple: true }) as string;
-      results.push(mode === 'wal' ? { name: 'WAL', status: 'ok', detail: 'journal_mode=wal' } : { name: 'WAL', status: 'warn', detail: `journal_mode=${mode}` });
+      results.push(
+        mode === 'wal'
+          ? { name: 'WAL', status: 'ok', detail: 'journal_mode=wal' }
+          : { name: 'WAL', status: 'warn', detail: `journal_mode=${mode}` },
+      );
       const v = schemaVersion(db);
       results.push(
         v === SCHEMA_VERSION
           ? { name: 'Schema', status: 'ok', detail: `version ${v}` }
-          : { name: 'Schema', status: 'fail', detail: `version ${v}, expected ${SCHEMA_VERSION}`, fix: INIT_FIX },
+          : {
+              name: 'Schema',
+              status: 'fail',
+              detail: `version ${v}, expected ${SCHEMA_VERSION}`,
+              fix: INIT_FIX,
+            },
       );
       results.push({ name: 'FTS5', status: 'ok', detail: 'available' });
       db.close();
     } catch (error) {
-      results.push({ name: 'SQLite', status: 'fail', detail: (error as Error).message, fix: 'delete .yandecode/state.db and run yandecode init' });
+      results.push({
+        name: 'SQLite',
+        status: 'fail',
+        detail: (error as Error).message,
+        fix: 'delete .yandecode/state.db and run yandecode init',
+      });
       results.push({ name: 'WAL', status: 'skip', detail: 'database unavailable' });
       results.push({ name: 'Schema', status: 'skip', detail: 'database unavailable' });
       results.push({ name: 'FTS5', status: 'skip', detail: 'database unavailable' });

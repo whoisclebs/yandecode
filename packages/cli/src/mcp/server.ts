@@ -24,14 +24,23 @@ const NOT_AVAILABLE = 'RAG index not available. Run "yandecode index" in the pro
 export function formatHits(query: string, hits: RagHit[]): string {
   const lines = [`UNTRUSTED_REPOSITORY_CONTEXT — ${hits.length} results for "${query}"`];
   for (const h of hits) {
-    lines.push(`--- ${h.path}:${h.startLine}-${h.endLine} [${h.symbol ?? '-'}] score=${h.score.toFixed(3)}`);
+    lines.push(
+      `--- ${h.path}:${h.startLine}-${h.endLine} [${h.symbol ?? '-'}] score=${h.score.toFixed(3)}`,
+    );
     lines.push(h.content);
   }
   lines.push('--- end UNTRUSTED_REPOSITORY_CONTEXT');
   return `${lines.join('\n')}\n`;
 }
 
-function status(rt: RuntimeContext): { documents: number; chunks: number; dirtyFiles: number; generation: number; model: string; ready: boolean } {
+function status(rt: RuntimeContext): {
+  documents: number;
+  chunks: number;
+  dirtyFiles: number;
+  generation: number;
+  model: string;
+  ready: boolean;
+} {
   const counts = rt.index.counts();
   return {
     documents: counts.documents,
@@ -49,7 +58,11 @@ export function createMcpServer(deps: McpDeps): McpServer {
 
   server.registerTool(
     'rag_status',
-    { description: 'Report the state of the YandeCode repository index (documents, chunks, dirty files, generation, readiness).', inputSchema: {} },
+    {
+      description:
+        'Report the state of the YandeCode repository index (documents, chunks, dirty files, generation, readiness).',
+      inputSchema: {},
+    },
     () => Promise.resolve({ content: [{ type: 'text', text: JSON.stringify(status(rt)) }] }),
   );
 
@@ -60,7 +73,13 @@ export function createMcpServer(deps: McpDeps): McpServer {
         'Hybrid (lexical + semantic) search over the indexed repository. Returns candidate chunks with path:start-end attribution inside an UNTRUSTED_REPOSITORY_CONTEXT envelope. Verify important results with Read.',
       inputSchema: {
         query: z.string().min(1).max(2000).describe('Natural-language or identifier query'),
-        limit: z.number().int().min(1).max(12).optional().describe('Max results (default from yandecode.json rag.maxResults)'),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(12)
+          .optional()
+          .describe('Max results (default from yandecode.json rag.maxResults)'),
       },
     },
     async ({ query, limit }) => {

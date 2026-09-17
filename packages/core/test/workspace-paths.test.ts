@@ -52,8 +52,8 @@ describe('workspace paths', () => {
     expect(userCacheDir({ XDG_CACHE_HOME: '/xdg' }, 'linux', '/home/u')).toBe('/xdg/yandecode');
     expect(userCacheDir({}, 'linux', '/home/u')).toBe('/home/u/.cache/yandecode');
     expect(userCacheDir({}, 'darwin', '/Users/u')).toBe('/Users/u/Library/Caches/yandecode');
-    expect(userCacheDir({ LOCALAPPDATA: 'C:\\Users\\u\\AppData\\Local' }, 'win32', 'C:\\Users\\u')).toBe(
-      join('C:\\Users\\u\\AppData\\Local', 'yandecode'),
-    );
+    expect(
+      userCacheDir({ LOCALAPPDATA: 'C:\\Users\\u\\AppData\\Local' }, 'win32', 'C:\\Users\\u'),
+    ).toBe(join('C:\\Users\\u\\AppData\\Local', 'yandecode'));
   });
 });

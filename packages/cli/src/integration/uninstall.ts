@@ -26,7 +26,10 @@ function removeEmptyDirsUpTo(dir: string, stopAt: string): void {
   }
 }
 
-export function runUninstall(cwd: string, options: UninstallOptions = {}): Promise<UninstallReport> {
+export function runUninstall(
+  cwd: string,
+  options: UninstallOptions = {},
+): Promise<UninstallReport> {
   const root = cwd;
   const paths = workspacePathsFor(root);
   const manifest = readManifest(paths.managedManifest);
@@ -47,13 +50,17 @@ export function runUninstall(cwd: string, options: UninstallOptions = {}): Promi
 
   const settingsFile = join(root, '.claude', 'settings.json');
   if (existsSync(settingsFile)) {
-    const next = removeHooks(JSON.parse(readFileSync(settingsFile, 'utf8')) as Record<string, unknown>);
+    const next = removeHooks(
+      JSON.parse(readFileSync(settingsFile, 'utf8')) as Record<string, unknown>,
+    );
     writeFileAtomic(settingsFile, `${JSON.stringify(next, null, 2)}\n`);
   }
 
   const mcpFile = join(root, '.mcp.json');
   if (existsSync(mcpFile)) {
-    const next = removeMcpServer(JSON.parse(readFileSync(mcpFile, 'utf8')) as Record<string, unknown>);
+    const next = removeMcpServer(
+      JSON.parse(readFileSync(mcpFile, 'utf8')) as Record<string, unknown>,
+    );
     writeFileAtomic(mcpFile, `${JSON.stringify(next, null, 2)}\n`);
   }
 
@@ -61,7 +68,11 @@ export function runUninstall(cwd: string, options: UninstallOptions = {}): Promi
   if (existsSync(claudeMd)) writeFileAtomic(claudeMd, removeBlock(readFileSync(claudeMd, 'utf8')));
 
   const gitignore = join(root, '.gitignore');
-  if (existsSync(gitignore)) writeFileAtomic(gitignore, removeGitignoreEntry(readFileSync(gitignore, 'utf8'), '.yandecode/'));
+  if (existsSync(gitignore))
+    writeFileAtomic(
+      gitignore,
+      removeGitignoreEntry(readFileSync(gitignore, 'utf8'), '.yandecode/'),
+    );
 
   if (existsSync(paths.configFile)) unlinkSync(paths.configFile);
 

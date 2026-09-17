@@ -26,7 +26,10 @@ export interface RuntimeContext {
 export function openRuntime(cwd: string): RuntimeContext {
   const paths = resolveWorkspace(cwd);
   if (!paths) {
-    throw new YandeCodeError('WORKSPACE_NOT_INITIALIZED', `no yandecode.json found above ${cwd}; run "yandecode init"`);
+    throw new YandeCodeError(
+      'WORKSPACE_NOT_INITIALIZED',
+      `no yandecode.json found above ${cwd}; run "yandecode init"`,
+    );
   }
   ensureWorkspaceDirs(paths);
   const config = loadConfig(paths.root);

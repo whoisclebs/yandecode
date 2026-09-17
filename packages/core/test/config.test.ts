@@ -2,7 +2,12 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, loadConfig, writeDefaultConfig, CONFIG_FILENAME } from '../src/config/load.js';
+import {
+  DEFAULT_CONFIG,
+  loadConfig,
+  writeDefaultConfig,
+  CONFIG_FILENAME,
+} from '../src/config/load.js';
 import { YandeCodeError } from '../src/errors.js';
 
 const tmp = (): string => mkdtempSync(join(tmpdir(), 'yc-config-'));
@@ -47,6 +52,8 @@ describe('config', () => {
     expect(writeDefaultConfig(root)).toBe(true);
     writeFileSync(join(root, CONFIG_FILENAME), JSON.stringify({ memory: { enabled: false } }));
     expect(writeDefaultConfig(root)).toBe(false);
-    expect(JSON.parse(readFileSync(join(root, CONFIG_FILENAME), 'utf8'))).toEqual({ memory: { enabled: false } });
+    expect(JSON.parse(readFileSync(join(root, CONFIG_FILENAME), 'utf8'))).toEqual({
+      memory: { enabled: false },
+    });
   });
 });

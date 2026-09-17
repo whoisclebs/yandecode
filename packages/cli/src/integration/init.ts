@@ -67,30 +67,57 @@ export function runInit(cwd: string, options: InitOptions = {}): Promise<InitRep
   const files: MaterializeResult[] = [];
   for (const agent of plugin.agents) {
     const rel = `.claude/agents/${agent.name}.md`;
-    files.push(materializeFile(root, rel, readFileSync(agent.file, 'utf8'), prevByPath.get(rel), force));
+    files.push(
+      materializeFile(root, rel, readFileSync(agent.file, 'utf8'), prevByPath.get(rel), force),
+    );
   }
   for (const skill of plugin.skills) {
     const rel = `.claude/skills/${skill.name}/SKILL.md`;
-    files.push(materializeFile(root, rel, readFileSync(skill.file, 'utf8'), prevByPath.get(rel), force));
+    files.push(
+      materializeFile(root, rel, readFileSync(skill.file, 'utf8'), prevByPath.get(rel), force),
+    );
   }
 
   const settingsFile = join(root, '.claude', 'settings.json');
   const entries = hookEntriesFor(launcher, JSON.parse(readFileSync(plugin.hooksFile, 'utf8')));
-  const settingsUpdated = writeJsonIfChanged(settingsFile, mergeHooks(readJsonOr(settingsFile, {}), entries));
+  const settingsUpdated = writeJsonIfChanged(
+    settingsFile,
+    mergeHooks(readJsonOr(settingsFile, {}), entries),
+  );
 
   const mcpFile = join(root, '.mcp.json');
   const mcpUpdated = writeJsonIfChanged(mcpFile, addMcpServer(readJsonOr(mcpFile, {}), launcher));
 
   const claudeMd = join(root, 'CLAUDE.md');
-  const claudeMdUpdated = writeTextIfChanged(claudeMd, upsertBlock(existsSync(claudeMd) ? readFileSync(claudeMd, 'utf8') : '', claudeMdBlock()));
+  const claudeMdUpdated = writeTextIfChanged(
+    claudeMd,
+    upsertBlock(existsSync(claudeMd) ? readFileSync(claudeMd, 'utf8') : '', claudeMdBlock()),
+  );
 
   const gitignore = join(root, '.gitignore');
-  const gitignoreUpdated = writeTextIfChanged(gitignore, ensureGitignoreEntry(existsSync(gitignore) ? readFileSync(gitignore, 'utf8') : '', '.yandecode/'));
+  const gitignoreUpdated = writeTextIfChanged(
+    gitignore,
+    ensureGitignoreEntry(
+      existsSync(gitignore) ? readFileSync(gitignore, 'utf8') : '',
+      '.yandecode/',
+    ),
+  );
 
   writeManifest(paths.managedManifest, {
     version: VERSION,
-    files: files.map((f) => ({ path: f.path, hash: f.action === 'preserved' ? (prevByPath.get(f.path)?.hash ?? f.hash) : f.hash })),
+    files: files.map((f) => ({
+      path: f.path,
+      hash: f.action === 'preserved' ? (prevByPath.get(f.path)?.hash ?? f.hash) : f.hash,
+    })),
   });
 
-  return Promise.resolve({ root, files, configCreated, settingsUpdated, mcpUpdated, claudeMdUpdated, gitignoreUpdated });
+  return Promise.resolve({
+    root,
+    files,
+    configCreated,
+    settingsUpdated,
+    mcpUpdated,
+    claudeMdUpdated,
+    gitignoreUpdated,
+  });
 }

@@ -9,6 +9,8 @@ describe('resolveLauncher', () => {
     expect(resolveLauncher(() => false)).toEqual({ command: 'npx', args: ['yandecode'] });
   });
   it('renders a command line', () => {
-    expect(launcherCommandLine({ command: 'npx', args: ['yandecode'] }, 'hook', 'SessionStart')).toBe('npx yandecode hook SessionStart');
+    expect(
+      launcherCommandLine({ command: 'npx', args: ['yandecode'] }, 'hook', 'SessionStart'),
+    ).toBe('npx yandecode hook SessionStart');
   });
 });

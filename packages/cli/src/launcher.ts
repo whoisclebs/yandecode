@@ -15,7 +15,9 @@ export function defaultProbe(command: string): boolean {
 }
 
 export function resolveLauncher(probe: (cmd: string) => boolean = defaultProbe): Launcher {
-  return probe('yandecode') ? { command: 'yandecode', args: [] } : { command: 'npx', args: ['yandecode'] };
+  return probe('yandecode')
+    ? { command: 'yandecode', args: [] }
+    : { command: 'npx', args: ['yandecode'] };
 }
 
 export function launcherCommandLine(launcher: Launcher, ...rest: string[]): string {

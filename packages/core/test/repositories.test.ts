@@ -37,8 +37,24 @@ describe('IndexRepository', () => {
     const state = StateService.open(':memory:');
     const repo = new IndexRepository(state);
     expect(repo.getMeta('repository')).toBeNull();
-    await repo.setMeta({ name: 'repository', generation: 1, dimensions: 384, modelId: 'm', vectorCount: 0, builtAt: 'now', filePath: 'repository-00001.usearch' });
-    await repo.setMeta({ name: 'repository', generation: 2, dimensions: 384, modelId: 'm', vectorCount: 5, builtAt: 'later', filePath: 'repository-00002.usearch' });
+    await repo.setMeta({
+      name: 'repository',
+      generation: 1,
+      dimensions: 384,
+      modelId: 'm',
+      vectorCount: 0,
+      builtAt: 'now',
+      filePath: 'repository-00001.usearch',
+    });
+    await repo.setMeta({
+      name: 'repository',
+      generation: 2,
+      dimensions: 384,
+      modelId: 'm',
+      vectorCount: 5,
+      builtAt: 'later',
+      filePath: 'repository-00002.usearch',
+    });
     expect(repo.getMeta('repository')?.generation).toBe(2);
     await repo.markDirty('src/a.ts', 'Write');
     await repo.markDirty('src/a.ts', 'Edit');

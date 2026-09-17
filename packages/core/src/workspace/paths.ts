@@ -41,7 +41,13 @@ export function resolveWorkspace(cwd: string): WorkspacePaths | null {
 }
 
 export function ensureWorkspaceDirs(paths: WorkspacePaths): void {
-  for (const dir of [paths.yandecodeDir, paths.indexesDir, paths.cacheDir, paths.logsDir, paths.runtimeDir]) {
+  for (const dir of [
+    paths.yandecodeDir,
+    paths.indexesDir,
+    paths.cacheDir,
+    paths.logsDir,
+    paths.runtimeDir,
+  ]) {
     mkdirSync(dir, { recursive: true });
   }
 }

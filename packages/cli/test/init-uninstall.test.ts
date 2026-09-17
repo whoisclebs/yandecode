@@ -7,7 +7,8 @@ import { runUninstall } from '../src/integration/uninstall.js';
 
 const launcher = { command: 'yandecode', args: [] };
 const tmp = (): string => mkdtempSync(join(tmpdir(), 'yc-init-'));
-const readJson = (f: string): Record<string, unknown> => JSON.parse(readFileSync(f, 'utf8')) as Record<string, unknown>;
+const readJson = (f: string): Record<string, unknown> =>
+  JSON.parse(readFileSync(f, 'utf8')) as Record<string, unknown>;
 
 describe('runInit', () => {
   it('materializes agents, skills, hooks, mcp, CLAUDE.md, gitignore and manifest in a clean repo', async () => {
@@ -17,17 +18,33 @@ describe('runInit', () => {
     expect(existsSync(join(root, 'yandecode.json'))).toBe(true);
     expect(existsSync(join(root, '.yandecode', 'state.db'))).toBe(true);
     expect(readdirSync(join(root, '.claude', 'agents')).sort()).toEqual([
-      'yandecode-dispatcher.md', 'yandecode-implementer.md', 'yandecode-researcher.md', 'yandecode-reviewer.md',
-      'yandecode-scout.md', 'yandecode-security.md', 'yandecode-tester.md',
+      'yandecode-dispatcher.md',
+      'yandecode-implementer.md',
+      'yandecode-researcher.md',
+      'yandecode-reviewer.md',
+      'yandecode-scout.md',
+      'yandecode-security.md',
+      'yandecode-tester.md',
     ]);
-    expect(existsSync(join(root, '.claude', 'skills', 'yandecode-context-rules', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(root, '.claude', 'skills', 'yandecode-context-rules', 'SKILL.md'))).toBe(
+      true,
+    );
     const settings = readJson(join(root, '.claude', 'settings.json'));
-    expect(Object.keys(settings.hooks as object)).toEqual(['SessionStart', 'PostToolUse', 'SessionEnd']);
+    expect(Object.keys(settings.hooks as object)).toEqual([
+      'SessionStart',
+      'PostToolUse',
+      'SessionEnd',
+    ]);
     const mcp = readJson(join(root, '.mcp.json'));
-    expect((mcp.mcpServers as Record<string, unknown>).yandecode).toEqual({ command: 'yandecode', args: ['mcp', 'serve'] });
+    expect((mcp.mcpServers as Record<string, unknown>).yandecode).toEqual({
+      command: 'yandecode',
+      args: ['mcp', 'serve'],
+    });
     expect(readFileSync(join(root, 'CLAUDE.md'), 'utf8')).toContain('<!-- yandecode:start -->');
     expect(readFileSync(join(root, '.gitignore'), 'utf8')).toContain('.yandecode/');
-    const manifest = readJson(join(root, '.yandecode', 'managed.json')) as { files: { path: string }[] };
+    const manifest = readJson(join(root, '.yandecode', 'managed.json')) as {
+      files: { path: string }[];
+    };
     expect(manifest.files.map((f) => f.path)).toContain('.claude/agents/yandecode-scout.md');
     expect(manifest.files).toHaveLength(9);
   });
@@ -36,20 +53,34 @@ describe('runInit', () => {
     const root = tmp();
     writeFileSync(join(root, 'CLAUDE.md'), '# Mine\n');
     writeFileSync(join(root, '.gitignore'), 'dist/\n');
-    writeFileSync(join(root, '.mcp.json'), JSON.stringify({ mcpServers: { other: { command: 'x' } } }));
+    writeFileSync(
+      join(root, '.mcp.json'),
+      JSON.stringify({ mcpServers: { other: { command: 'x' } } }),
+    );
     await runInit(root, { launcher });
-    writeFileSync(join(root, '.claude', 'agents', 'yandecode-scout.md'), '---\nname: yandecode-scout\n---\nmy version');
+    writeFileSync(
+      join(root, '.claude', 'agents', 'yandecode-scout.md'),
+      '---\nname: yandecode-scout\n---\nmy version',
+    );
     const second = await runInit(root, { launcher });
     expect(second.configCreated).toBe(false);
-    expect(second.files.find((f) => f.path === '.claude/agents/yandecode-scout.md')?.action).toBe('preserved');
+    expect(second.files.find((f) => f.path === '.claude/agents/yandecode-scout.md')?.action).toBe(
+      'preserved',
+    );
     expect(second.files.filter((f) => f.action === 'unchanged')).toHaveLength(8);
-    expect(readFileSync(join(root, '.claude', 'agents', 'yandecode-scout.md'), 'utf8')).toContain('my version');
+    expect(readFileSync(join(root, '.claude', 'agents', 'yandecode-scout.md'), 'utf8')).toContain(
+      'my version',
+    );
     expect(readFileSync(join(root, 'CLAUDE.md'), 'utf8').match(/yandecode:start/g)).toHaveLength(1);
     expect(readFileSync(join(root, 'CLAUDE.md'), 'utf8')).toMatch(/^# Mine\n/);
     expect(readFileSync(join(root, '.gitignore'), 'utf8')).toBe('dist/\n.yandecode/\n');
-    expect((readJson(join(root, '.mcp.json')).mcpServers as Record<string, unknown>).other).toEqual({ command: 'x' });
+    expect((readJson(join(root, '.mcp.json')).mcpServers as Record<string, unknown>).other).toEqual(
+      { command: 'x' },
+    );
     const third = await runInit(root, { launcher, force: true });
-    expect(third.files.find((f) => f.path === '.claude/agents/yandecode-scout.md')?.action).toBe('updated');
+    expect(third.files.find((f) => f.path === '.claude/agents/yandecode-scout.md')?.action).toBe(
+      'updated',
+    );
   });
 });
 
@@ -69,7 +100,9 @@ describe('runUninstall', () => {
     expect(readFileSync(join(root, 'CLAUDE.md'), 'utf8')).toBe('# Mine\n');
     expect(readFileSync(join(root, '.gitignore'), 'utf8')).toBe('dist/\n');
     expect(readJson(join(root, '.claude', 'settings.json')).hooks).toBeUndefined();
-    expect((readJson(join(root, '.mcp.json')).mcpServers as Record<string, unknown>).yandecode).toBeUndefined();
+    expect(
+      (readJson(join(root, '.mcp.json')).mcpServers as Record<string, unknown>).yandecode,
+    ).toBeUndefined();
     expect(existsSync(join(root, 'yandecode.json'))).toBe(false);
     expect(existsSync(join(root, '.yandecode', 'state.db'))).toBe(true);
     expect(existsSync(join(root, '.yandecode', 'managed.json'))).toBe(false);

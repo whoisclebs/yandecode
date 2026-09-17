@@ -1,6 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { AGENT_NAMES, HOOK_EVENTS, SKILL_NAMES, loadPluginContent, parseFrontmatter } from '../src/plugin-content.js';
+import {
+  AGENT_NAMES,
+  HOOK_EVENTS,
+  SKILL_NAMES,
+  loadPluginContent,
+  parseFrontmatter,
+} from '../src/plugin-content.js';
 
 describe('plugin content', () => {
   const content = loadPluginContent();
@@ -17,7 +23,12 @@ describe('plugin content', () => {
   });
 
   it('gives read-only agents no write tools', () => {
-    for (const name of ['yandecode-scout', 'yandecode-reviewer', 'yandecode-security', 'yandecode-researcher']) {
+    for (const name of [
+      'yandecode-scout',
+      'yandecode-reviewer',
+      'yandecode-security',
+      'yandecode-researcher',
+    ]) {
       const agent = content.agents.find((a) => a.name === name);
       const fm = parseFrontmatter(readFileSync(agent!.file, 'utf8'));
       expect(fm.tools).toBeDefined();
@@ -26,8 +37,13 @@ describe('plugin content', () => {
   });
 
   it('never references swarm or memory MCP tools in v0', () => {
-    for (const file of [...content.agents.map((a) => a.file), ...content.skills.map((s) => s.file)]) {
-      expect(readFileSync(file, 'utf8')).not.toMatch(/\b(swarm_|task_create|task_update|message_send|memory_store|memory_search|workspace_reserve)\b/);
+    for (const file of [
+      ...content.agents.map((a) => a.file),
+      ...content.skills.map((s) => s.file),
+    ]) {
+      expect(readFileSync(file, 'utf8')).not.toMatch(
+        /\b(swarm_|task_create|task_update|message_send|memory_store|memory_search|workspace_reserve)\b/,
+      );
     }
   });
 
@@ -42,7 +58,10 @@ describe('plugin content', () => {
 
   it('declares hooks that call yandecode hook <event> with a 10 s timeout', () => {
     const hooks = JSON.parse(readFileSync(content.hooksFile, 'utf8')) as {
-      hooks: Record<string, { matcher?: string; hooks: { type: string; command: string; timeout: number }[] }[]>;
+      hooks: Record<
+        string,
+        { matcher?: string; hooks: { type: string; command: string; timeout: number }[] }[]
+      >;
     };
     expect(Object.keys(hooks.hooks)).toEqual([...HOOK_EVENTS]);
     for (const [event, groups] of Object.entries(hooks.hooks)) {
@@ -58,18 +77,26 @@ describe('plugin content', () => {
   });
 
   it('declares the yandecode MCP server over stdio', () => {
-    const mcp = JSON.parse(readFileSync(content.mcpFile, 'utf8')) as { mcpServers: Record<string, { command: string; args: string[] }> };
+    const mcp = JSON.parse(readFileSync(content.mcpFile, 'utf8')) as {
+      mcpServers: Record<string, { command: string; args: string[] }>;
+    };
     expect(mcp.mcpServers.yandecode).toEqual({ command: 'yandecode', args: ['mcp', 'serve'] });
   });
 
   it('has a valid plugin manifest', () => {
-    const manifest = JSON.parse(readFileSync(content.manifestFile, 'utf8')) as { name: string; version: string };
+    const manifest = JSON.parse(readFileSync(content.manifestFile, 'utf8')) as {
+      name: string;
+      version: string;
+    };
     expect(manifest.name).toBe('yandecode');
     expect(manifest.version).toMatch(/^\d+\.\d+\.\d+/);
   });
 
   it('parseFrontmatter handles missing and present blocks', () => {
     expect(parseFrontmatter('no frontmatter')).toEqual({});
-    expect(parseFrontmatter('---\nname: x\ndescription: a: b\n---\nbody')).toEqual({ name: 'x', description: 'a: b' });
+    expect(parseFrontmatter('---\nname: x\ndescription: a: b\n---\nbody')).toEqual({
+      name: 'x',
+      description: 'a: b',
+    });
   });
 });

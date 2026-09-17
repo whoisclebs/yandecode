@@ -28,7 +28,11 @@ export {
 } from './persistence/migrations/index.js';
 export { StateService } from './persistence/state-service.js';
 export { SessionRepository, type SessionRecord } from './persistence/repositories/sessions.js';
-export { EventRepository, type EventInput, type EventRecord } from './persistence/repositories/events.js';
+export {
+  EventRepository,
+  type EventInput,
+  type EventRecord,
+} from './persistence/repositories/events.js';
 export {
   IndexRepository,
   type DirtyEntry,

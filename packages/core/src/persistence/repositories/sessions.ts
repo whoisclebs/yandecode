@@ -45,12 +45,9 @@ export class SessionRepository {
       compactSummary: null,
     };
     return this.state.write((db) => {
-      db.prepare('INSERT INTO sessions (id, claude_session_id, cwd, started_at) VALUES (?, ?, ?, ?)').run(
-        record.id,
-        record.claudeSessionId,
-        record.cwd,
-        record.startedAt,
-      );
+      db.prepare(
+        'INSERT INTO sessions (id, claude_session_id, cwd, started_at) VALUES (?, ?, ?, ?)',
+      ).run(record.id, record.claudeSessionId, record.cwd, record.startedAt);
       return record;
     });
   }
@@ -58,7 +55,9 @@ export class SessionRepository {
   findOpenByClaudeId(claudeSessionId: string): SessionRecord | null {
     const row = this.state.read((db) =>
       db
-        .prepare('SELECT * FROM sessions WHERE claude_session_id = ? AND ended_at IS NULL ORDER BY started_at DESC LIMIT 1')
+        .prepare(
+          'SELECT * FROM sessions WHERE claude_session_id = ? AND ended_at IS NULL ORDER BY started_at DESC LIMIT 1',
+        )
         .get(claudeSessionId),
     ) as Row | undefined;
     return row ? fromRow(row) : null;
@@ -68,14 +67,18 @@ export class SessionRepository {
     return this.state.write(
       (db) =>
         db
-          .prepare('UPDATE sessions SET ended_at = ?, end_reason = ? WHERE claude_session_id = ? AND ended_at IS NULL')
+          .prepare(
+            'UPDATE sessions SET ended_at = ?, end_reason = ? WHERE claude_session_id = ? AND ended_at IS NULL',
+          )
           .run(nowIso(), reason, claudeSessionId).changes,
     );
   }
 
   setCompactSummary(claudeSessionId: string, summary: string): Promise<void> {
     return this.state.write((db) => {
-      db.prepare('UPDATE sessions SET compact_summary = ? WHERE claude_session_id = ? AND ended_at IS NULL').run(summary, claudeSessionId);
+      db.prepare(
+        'UPDATE sessions SET compact_summary = ? WHERE claude_session_id = ? AND ended_at IS NULL',
+      ).run(summary, claudeSessionId);
     });
   }
 }

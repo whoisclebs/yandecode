@@ -15,7 +15,10 @@ describe('EventLog', () => {
     const log = new EventLog(events, file);
     await log.emit({ event: 'a' });
     await log.emit({ event: 'b', agent: 'scout' });
-    const lines = readFileSync(file, 'utf8').trim().split('\n').map((l) => JSON.parse(l) as { event: string; agent?: string });
+    const lines = readFileSync(file, 'utf8')
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l) as { event: string; agent?: string });
     expect(lines.map((l) => l.event)).toEqual(['a', 'b']);
     expect(lines[1]?.agent).toBe('scout');
     expect(events.recent(5)).toHaveLength(2);

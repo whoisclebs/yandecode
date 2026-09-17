@@ -16,7 +16,10 @@ export function loadConfig(projectRoot: string): YandeCodeConfig {
   }
   const parsed = ConfigSchema.safeParse(raw);
   if (!parsed.success) {
-    throw new YandeCodeError('CONFIG_INVALID', `${file}: ${parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`);
+    throw new YandeCodeError(
+      'CONFIG_INVALID',
+      `${file}: ${parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`,
+    );
   }
   return parsed.data;
 }

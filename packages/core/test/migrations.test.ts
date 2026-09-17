@@ -1,9 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { MIGRATIONS, SCHEMA_VERSION, runMigrations, schemaVersion } from '../src/persistence/migrations/index.js';
+import {
+  MIGRATIONS,
+  SCHEMA_VERSION,
+  runMigrations,
+  schemaVersion,
+} from '../src/persistence/migrations/index.js';
 import { openDatabase } from '../src/persistence/open.js';
 
 const EXPECTED_TABLES = [
-  'schema_migrations', 'sessions', 'events', 'documents', 'chunks', 'vector_index_meta', 'index_dirty', 'vector_id_seq',
+  'schema_migrations',
+  'sessions',
+  'events',
+  'documents',
+  'chunks',
+  'vector_index_meta',
+  'index_dirty',
+  'vector_id_seq',
 ];
 
 describe('migrations', () => {
@@ -43,14 +55,24 @@ describe('migrations', () => {
   it('keeps chunks_fts in sync through triggers', () => {
     const db = openDatabase(':memory:');
     runMigrations(db);
-    db.prepare("INSERT INTO documents (id,path,size_bytes,content_hash,indexed_at,index_generation) VALUES ('d1','src/a.ts',10,'h','2026-01-01T00:00:00.000Z',1)").run();
-    db.prepare("INSERT INTO chunks (id,document_id,vector_id,kind,symbol,identifiers,start_line,end_line,content,content_hash,token_count,created_at,updated_at) VALUES ('c1','d1',1,'function','JwtValidator.validate','jwt validator validate',1,5,'function validate(token) {}','h1',8,'2026-01-01T00:00:00.000Z','2026-01-01T00:00:00.000Z')").run();
-    expect(db.prepare("SELECT COUNT(*) AS c FROM chunks_fts WHERE chunks_fts MATCH 'validate'").get()).toEqual({ c: 1 });
+    db.prepare(
+      "INSERT INTO documents (id,path,size_bytes,content_hash,indexed_at,index_generation) VALUES ('d1','src/a.ts',10,'h','2026-01-01T00:00:00.000Z',1)",
+    ).run();
+    db.prepare(
+      "INSERT INTO chunks (id,document_id,vector_id,kind,symbol,identifiers,start_line,end_line,content,content_hash,token_count,created_at,updated_at) VALUES ('c1','d1',1,'function','JwtValidator.validate','jwt validator validate',1,5,'function validate(token) {}','h1',8,'2026-01-01T00:00:00.000Z','2026-01-01T00:00:00.000Z')",
+    ).run();
+    expect(
+      db.prepare("SELECT COUNT(*) AS c FROM chunks_fts WHERE chunks_fts MATCH 'validate'").get(),
+    ).toEqual({ c: 1 });
     db.prepare("UPDATE chunks SET content = 'function verify(token) {}' WHERE id = 'c1'").run();
-    expect(db.prepare("SELECT COUNT(*) AS c FROM chunks_fts WHERE chunks_fts MATCH 'verify'").get()).toEqual({ c: 1 });
+    expect(
+      db.prepare("SELECT COUNT(*) AS c FROM chunks_fts WHERE chunks_fts MATCH 'verify'").get(),
+    ).toEqual({ c: 1 });
     db.prepare("DELETE FROM documents WHERE id = 'd1'").run();
     expect(db.prepare('SELECT COUNT(*) AS c FROM chunks').get()).toEqual({ c: 0 });
-    expect(db.prepare("SELECT COUNT(*) AS c FROM chunks_fts WHERE chunks_fts MATCH 'verify'").get()).toEqual({ c: 0 });
+    expect(
+      db.prepare("SELECT COUNT(*) AS c FROM chunks_fts WHERE chunks_fts MATCH 'verify'").get(),
+    ).toEqual({ c: 0 });
   });
 
   it('seeds vector_id_seq for repository and memory', () => {

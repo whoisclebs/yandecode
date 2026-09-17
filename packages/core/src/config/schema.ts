@@ -15,7 +15,11 @@ export const ConfigSchema = z.object({
       embeddingModel: z.string().min(1).default('Snowflake/snowflake-arctic-embed-xs'),
       maxResults: z.number().int().min(1).max(12).default(8),
     })
-    .default({ enabled: true, embeddingModel: 'Snowflake/snowflake-arctic-embed-xs', maxResults: 8 }),
+    .default({
+      enabled: true,
+      embeddingModel: 'Snowflake/snowflake-arctic-embed-xs',
+      maxResults: 8,
+    }),
   memory: z.object({ enabled: z.boolean().default(true) }).default({ enabled: true }),
 });
 

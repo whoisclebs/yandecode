@@ -33,7 +33,9 @@ export class IndexRepository {
   constructor(private readonly state: StateService) {}
 
   getMeta(name: IndexName): VectorIndexMeta | null {
-    const r = this.state.read((db) => db.prepare('SELECT * FROM vector_index_meta WHERE name = ?').get(name)) as MetaRow | undefined;
+    const r = this.state.read((db) =>
+      db.prepare('SELECT * FROM vector_index_meta WHERE name = ?').get(name),
+    ) as MetaRow | undefined;
     if (!r) return null;
     return {
       name: r.name,
@@ -53,7 +55,15 @@ export class IndexRepository {
          VALUES (?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(name) DO UPDATE SET generation=excluded.generation, dimensions=excluded.dimensions,
            model_id=excluded.model_id, vector_count=excluded.vector_count, built_at=excluded.built_at, file_path=excluded.file_path`,
-      ).run(meta.name, meta.generation, meta.dimensions, meta.modelId, meta.vectorCount, meta.builtAt, meta.filePath);
+      ).run(
+        meta.name,
+        meta.generation,
+        meta.dimensions,
+        meta.modelId,
+        meta.vectorCount,
+        meta.builtAt,
+        meta.filePath,
+      );
     });
   }
 
@@ -66,7 +76,9 @@ export class IndexRepository {
   }
 
   listDirty(): DirtyEntry[] {
-    const rows = this.state.read((db) => db.prepare('SELECT path, reason, marked_at FROM index_dirty ORDER BY path').all()) as {
+    const rows = this.state.read((db) =>
+      db.prepare('SELECT path, reason, marked_at FROM index_dirty ORDER BY path').all(),
+    ) as {
       path: string;
       reason: string;
       marked_at: string;

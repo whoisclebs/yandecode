@@ -9,10 +9,15 @@ const YANDECODE_HOOK = /\byandecode hook (\w+)\b/;
 function isYandecodeGroup(group: unknown): boolean {
   if (typeof group !== 'object' || group === null) return false;
   const hooks = (group as HookGroup).hooks;
-  return Array.isArray(hooks) && hooks.length > 0 && hooks.every((h) => YANDECODE_HOOK.test(h.command));
+  return (
+    Array.isArray(hooks) && hooks.length > 0 && hooks.every((h) => YANDECODE_HOOK.test(h.command))
+  );
 }
 
-export function hookEntriesFor(launcher: Launcher, pluginHooksJson: unknown): Record<string, unknown[]> {
+export function hookEntriesFor(
+  launcher: Launcher,
+  pluginHooksJson: unknown,
+): Record<string, unknown[]> {
   const source = (pluginHooksJson as { hooks: Record<string, HookGroup[]> }).hooks;
   const out: Record<string, unknown[]> = {};
   for (const [event, groups] of Object.entries(source)) {
@@ -40,7 +45,10 @@ export function removeHooks(settings: Record<string, unknown>): Record<string, u
   return next;
 }
 
-export function mergeHooks(settings: Record<string, unknown>, entries: Record<string, unknown[]>): Record<string, unknown> {
+export function mergeHooks(
+  settings: Record<string, unknown>,
+  entries: Record<string, unknown[]>,
+): Record<string, unknown> {
   const base = removeHooks(settings);
   const hooks = { ...((base.hooks ?? {}) as Record<string, unknown[]>) };
   for (const [event, groups] of Object.entries(entries)) {

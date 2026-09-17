@@ -7,7 +7,12 @@ registerCommand((program) => {
     .command('doctor')
     .description('Check the YandeCode installation and this project')
     .action(() => {
-      const results = runDoctor({ cwd: process.cwd(), probeVersion: defaultProbeVersion, nodeVersion: process.version, yandecodeVersion: VERSION });
+      const results = runDoctor({
+        cwd: process.cwd(),
+        probeVersion: defaultProbeVersion,
+        nodeVersion: process.version,
+        yandecodeVersion: VERSION,
+      });
       process.stdout.write(formatDoctor(results));
       process.exitCode = doctorExitCode(results);
     });

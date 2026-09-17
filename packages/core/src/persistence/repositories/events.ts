@@ -36,7 +36,9 @@ export class EventRepository {
   record(input: EventInput): Promise<EventRecord> {
     const rec: EventRecord = { ...input, id: newId(), ts: nowIso() };
     return this.state.write((db) => {
-      db.prepare('INSERT INTO events (id, ts, event, agent, duration_ms, data_json) VALUES (?, ?, ?, ?, ?, ?)').run(
+      db.prepare(
+        'INSERT INTO events (id, ts, event, agent, duration_ms, data_json) VALUES (?, ?, ?, ?, ?, ?)',
+      ).run(
         rec.id,
         rec.ts,
         rec.event,
@@ -49,7 +51,9 @@ export class EventRepository {
   }
 
   recent(limit: number): EventRecord[] {
-    const rows = this.state.read((db) => db.prepare('SELECT * FROM events ORDER BY rowid DESC LIMIT ?').all(limit)) as Row[];
+    const rows = this.state.read((db) =>
+      db.prepare('SELECT * FROM events ORDER BY rowid DESC LIMIT ?').all(limit),
+    ) as Row[];
     return rows.map(fromRow);
   }
 }

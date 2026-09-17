@@ -10,6 +10,8 @@ registerCommand((program) => {
       const report = await runUninstall(process.cwd(), { purge: opts.purge });
       process.stdout.write(`removed ${report.removed.length} managed files\n`);
       for (const s of report.skipped) process.stdout.write(`  kept (edited by you): ${s}\n`);
-      process.stdout.write(report.purged ? 'deleted .yandecode/\n' : 'kept .yandecode/ (use --purge to delete)\n');
+      process.stdout.write(
+        report.purged ? 'deleted .yandecode/\n' : 'kept .yandecode/ (use --purge to delete)\n',
+      );
     });
 });

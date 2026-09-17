@@ -48,7 +48,10 @@ export function loadPluginContent(root: string = pluginRoot): PluginContent {
   ];
   const missing = required.filter((f) => !existsSync(f));
   if (missing.length > 0) {
-    throw new YandeCodeError('PLUGIN_CONTENT_MISSING', `missing plugin files: ${missing.join(', ')}`);
+    throw new YandeCodeError(
+      'PLUGIN_CONTENT_MISSING',
+      `missing plugin files: ${missing.join(', ')}`,
+    );
   }
   return content;
 }

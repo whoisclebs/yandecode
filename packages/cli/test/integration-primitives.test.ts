@@ -3,7 +3,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { sha256 } from '@yandecode/core';
 import { describe, expect, it } from 'vitest';
-import { CLAUDE_MD_END, CLAUDE_MD_START, claudeMdBlock, removeBlock, upsertBlock } from '../src/integration/claude-md.js';
+import {
+  CLAUDE_MD_END,
+  CLAUDE_MD_START,
+  claudeMdBlock,
+  removeBlock,
+  upsertBlock,
+} from '../src/integration/claude-md.js';
 import { ensureGitignoreEntry, removeGitignoreEntry } from '../src/integration/gitignore.js';
 import { readManifest, writeManifest } from '../src/integration/manifest.js';
 import { materializeFile } from '../src/integration/materialize.js';
@@ -17,7 +23,10 @@ describe('manifest', () => {
     const file = join(tmp(), 'managed.json');
     expect(readManifest(file)).toBeNull();
     writeManifest(file, { version: '0.1.0', files: [{ path: '.claude/agents/x.md', hash: 'h' }] });
-    expect(readManifest(file)).toEqual({ version: '0.1.0', files: [{ path: '.claude/agents/x.md', hash: 'h' }] });
+    expect(readManifest(file)).toEqual({
+      version: '0.1.0',
+      files: [{ path: '.claude/agents/x.md', hash: 'h' }],
+    });
   });
 });
 
@@ -28,7 +37,9 @@ describe('materializeFile', () => {
     expect(a.action).toBe('created');
     expect(readFileSync(join(root, '.claude/agents/x.md'), 'utf8')).toBe('v1');
     const prev = { path: '.claude/agents/x.md', hash: sha256('v1') };
-    expect(materializeFile(root, '.claude/agents/x.md', 'v1', prev, false).action).toBe('unchanged');
+    expect(materializeFile(root, '.claude/agents/x.md', 'v1', prev, false).action).toBe(
+      'unchanged',
+    );
     expect(materializeFile(root, '.claude/agents/x.md', 'v2', prev, false).action).toBe('updated');
   });
 
@@ -44,15 +55,24 @@ describe('materializeFile', () => {
   });
 
   it('refuses paths outside the root', () => {
-    expect(() => materializeFile(tmp(), '../evil.md', 'x', undefined, false)).toThrow(/PATH_OUTSIDE_ROOT/);
+    expect(() => materializeFile(tmp(), '../evil.md', 'x', undefined, false)).toThrow(
+      /PATH_OUTSIDE_ROOT/,
+    );
   });
 });
 
 describe('settings hooks merge', () => {
   const pluginHooks = {
     hooks: {
-      SessionStart: [{ hooks: [{ type: 'command', command: 'yandecode hook SessionStart', timeout: 10 }] }],
-      PostToolUse: [{ matcher: 'Write|Edit', hooks: [{ type: 'command', command: 'yandecode hook PostToolUse', timeout: 10 }] }],
+      SessionStart: [
+        { hooks: [{ type: 'command', command: 'yandecode hook SessionStart', timeout: 10 }] },
+      ],
+      PostToolUse: [
+        {
+          matcher: 'Write|Edit',
+          hooks: [{ type: 'command', command: 'yandecode hook PostToolUse', timeout: 10 }],
+        },
+      ],
     },
   };
 
@@ -75,7 +95,9 @@ describe('settings hooks merge', () => {
     expect(ss).toHaveLength(2);
     expect(once.permissions).toEqual({ allow: ['Bash(npm test)'] });
     const removed = removeHooks(once);
-    expect((removed.hooks as Record<string, unknown[]>).SessionStart).toEqual([{ hooks: [{ type: 'command', command: 'echo hi' }] }]);
+    expect((removed.hooks as Record<string, unknown[]>).SessionStart).toEqual([
+      { hooks: [{ type: 'command', command: 'echo hi' }] },
+    ]);
     expect((removed.hooks as Record<string, unknown[]>).PostToolUse).toBeUndefined();
   });
 });
@@ -84,11 +106,16 @@ describe('mcp config', () => {
   it('adds and removes the yandecode server, preserving others', () => {
     const base = { mcpServers: { other: { command: 'x' } } };
     const added = addMcpServer(base, { command: 'npx', args: ['yandecode'] });
-    expect((added.mcpServers as Record<string, unknown>).yandecode).toEqual({ command: 'npx', args: ['yandecode', 'mcp', 'serve'] });
+    expect((added.mcpServers as Record<string, unknown>).yandecode).toEqual({
+      command: 'npx',
+      args: ['yandecode', 'mcp', 'serve'],
+    });
     expect((added.mcpServers as Record<string, unknown>).other).toEqual({ command: 'x' });
     const removed = removeMcpServer(added);
     expect((removed.mcpServers as Record<string, unknown>).yandecode).toBeUndefined();
-    expect(addMcpServer({}, { command: 'yandecode', args: [] })).toEqual({ mcpServers: { yandecode: { command: 'yandecode', args: ['mcp', 'serve'] } } });
+    expect(addMcpServer({}, { command: 'yandecode', args: [] })).toEqual({
+      mcpServers: { yandecode: { command: 'yandecode', args: ['mcp', 'serve'] } },
+    });
   });
 });
 
@@ -99,7 +126,10 @@ describe('CLAUDE.md block', () => {
     expect(block.trimEnd().endsWith(CLAUDE_MD_END)).toBe(true);
     const appended = upsertBlock('# My project\n', block);
     expect(appended).toBe(`# My project\n\n${block}\n`);
-    const replaced = upsertBlock(`intro\n${CLAUDE_MD_START}\nold\n${CLAUDE_MD_END}\noutro\n`, block);
+    const replaced = upsertBlock(
+      `intro\n${CLAUDE_MD_START}\nold\n${CLAUDE_MD_END}\noutro\n`,
+      block,
+    );
     expect(replaced).toBe(`intro\n${block}\noutro\n`);
     expect(removeBlock(replaced)).toBe('intro\noutro\n');
     expect(upsertBlock('', block)).toBe(`${block}\n`);
@@ -108,9 +138,17 @@ describe('CLAUDE.md block', () => {
 
 describe('gitignore', () => {
   it('adds once and removes exactly the entry', () => {
-    expect(ensureGitignoreEntry('node_modules/\n', '.yandecode/')).toBe('node_modules/\n.yandecode/\n');
-    expect(ensureGitignoreEntry('node_modules/\n.yandecode/\n', '.yandecode/')).toBe('node_modules/\n.yandecode/\n');
-    expect(ensureGitignoreEntry('node_modules/', '.yandecode/')).toBe('node_modules/\n.yandecode/\n');
-    expect(removeGitignoreEntry('node_modules/\n.yandecode/\ndist/\n', '.yandecode/')).toBe('node_modules/\ndist/\n');
+    expect(ensureGitignoreEntry('node_modules/\n', '.yandecode/')).toBe(
+      'node_modules/\n.yandecode/\n',
+    );
+    expect(ensureGitignoreEntry('node_modules/\n.yandecode/\n', '.yandecode/')).toBe(
+      'node_modules/\n.yandecode/\n',
+    );
+    expect(ensureGitignoreEntry('node_modules/', '.yandecode/')).toBe(
+      'node_modules/\n.yandecode/\n',
+    );
+    expect(removeGitignoreEntry('node_modules/\n.yandecode/\ndist/\n', '.yandecode/')).toBe(
+      'node_modules/\ndist/\n',
+    );
   });
 });

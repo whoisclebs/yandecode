@@ -1,6 +1,10 @@
 import { appendFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import type { EventInput, EventRecord, EventRepository } from '../persistence/repositories/events.js';
+import type {
+  EventInput,
+  EventRecord,
+  EventRepository,
+} from '../persistence/repositories/events.js';
 
 export class EventLog {
   constructor(

@@ -16,7 +16,9 @@ export function schemaVersion(db: Database): number {
     .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations'")
     .get();
   if (!table) return 0;
-  const row = db.prepare('SELECT COALESCE(MAX(version), 0) AS v FROM schema_migrations').get() as { v: number };
+  const row = db.prepare('SELECT COALESCE(MAX(version), 0) AS v FROM schema_migrations').get() as {
+    v: number;
+  };
   return row.v;
 }
 
@@ -26,7 +28,9 @@ export function runMigrations(db: Database): { applied: number[]; current: numbe
   );
   const current = schemaVersion(db);
   const applied: number[] = [];
-  const record = db.prepare('INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)');
+  const record = db.prepare(
+    'INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)',
+  );
   for (const m of MIGRATIONS) {
     if (m.version <= current) continue;
     db.transaction(() => {
