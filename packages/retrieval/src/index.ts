@@ -16,3 +16,5 @@ export { GRAMMAR_FILES, detectLanguage } from './chunking/languages.js';
 export { identifiersOf } from './lexical/identifiers.js';
 export { TreeSitterChunker } from './chunking/tree-sitter-chunker.js';
 export { ChunkerRouter, createDefaultChunker } from './chunking/router.js';
+export { buildIgnore, DEFAULT_IGNORED_DIRS, isProbablyBinary, MAX_FILE_BYTES, SECRET_PATTERNS } from './scanner/rules.js';
+export { diffScan, scanRepository, type DiffResult, type ExistingDoc, type ScannedFile } from './scanner/scanner.js';
