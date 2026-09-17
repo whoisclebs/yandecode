@@ -56,3 +56,34 @@ export function mergeHooks(
   }
   return { ...base, hooks };
 }
+
+const YANDECODE_STATUSLINE = /\byandecode statusline\b/;
+
+function isYandecodeStatusLine(value: unknown): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { command?: unknown }).command === 'string' &&
+    YANDECODE_STATUSLINE.test((value as { command: string }).command)
+  );
+}
+
+export function mergeStatusLine(
+  settings: Record<string, unknown>,
+  launcher: Launcher,
+): Record<string, unknown> {
+  const existing = settings.statusLine;
+  // A statusLine we didn't set is the user's own choice - never overwrite it.
+  if (existing !== undefined && !isYandecodeStatusLine(existing)) return settings;
+  return {
+    ...settings,
+    statusLine: { type: 'command', command: launcherCommandLine(launcher, 'statusline') },
+  };
+}
+
+export function removeStatusLine(settings: Record<string, unknown>): Record<string, unknown> {
+  if (!isYandecodeStatusLine(settings.statusLine)) return settings;
+  const next = { ...settings };
+  delete next.statusLine;
+  return next;
+}

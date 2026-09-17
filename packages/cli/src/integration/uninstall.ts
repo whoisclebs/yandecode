@@ -6,7 +6,7 @@ import { removeGitignoreEntry } from './gitignore.js';
 import { readJsonSafe } from './json-utils.js';
 import { readManifest } from './manifest.js';
 import { removeMcpServer } from './mcp-config.js';
-import { removeHooks } from './settings.js';
+import { removeHooks, removeStatusLine } from './settings.js';
 
 export interface UninstallOptions {
   purge?: boolean;
@@ -56,7 +56,7 @@ export function runUninstall(
     // rewriting this one file rather than throwing.
     const parsed = readJsonSafe<Record<string, unknown> | null>(settingsFile, null);
     if (parsed) {
-      const next = removeHooks(parsed);
+      const next = removeStatusLine(removeHooks(parsed));
       writeFileAtomic(settingsFile, `${JSON.stringify(next, null, 2)}\n`);
     }
   }

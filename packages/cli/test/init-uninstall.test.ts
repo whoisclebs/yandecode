@@ -45,6 +45,7 @@ describe('runInit', () => {
       'WorktreeCreate',
       'WorktreeRemove',
     ]);
+    expect(settings.statusLine).toEqual({ type: 'command', command: 'yandecode statusline' });
     const mcp = readJson(join(root, '.mcp.json'));
     expect((mcp.mcpServers as Record<string, unknown>).yandecode).toEqual({
       command: 'yandecode',
@@ -67,7 +68,16 @@ describe('runInit', () => {
       join(root, '.mcp.json'),
       JSON.stringify({ mcpServers: { other: { command: 'x' } } }),
     );
+    mkdirSync(join(root, '.claude'), { recursive: true });
+    writeFileSync(
+      join(root, '.claude', 'settings.json'),
+      JSON.stringify({ statusLine: { type: 'command', command: './my-custom-statusline.sh' } }),
+    );
     await runInit(root, { launcher });
+    expect(readJson(join(root, '.claude', 'settings.json')).statusLine).toEqual({
+      type: 'command',
+      command: './my-custom-statusline.sh',
+    });
     writeFileSync(
       join(root, '.claude', 'agents', 'yandecode-scout.md'),
       '---\nname: yandecode-scout\n---\nmy version',
@@ -150,6 +160,7 @@ describe('runUninstall', () => {
     expect(readFileSync(join(root, 'CLAUDE.md'), 'utf8')).toBe('# Mine\n');
     expect(readFileSync(join(root, '.gitignore'), 'utf8')).toBe('dist/\n');
     expect(readJson(join(root, '.claude', 'settings.json')).hooks).toBeUndefined();
+    expect(readJson(join(root, '.claude', 'settings.json')).statusLine).toBeUndefined();
     expect(
       (readJson(join(root, '.mcp.json')).mcpServers as Record<string, unknown>).yandecode,
     ).toBeUndefined();

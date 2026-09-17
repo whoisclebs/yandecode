@@ -16,7 +16,7 @@ import { readJsonSafe } from './json-utils.js';
 import { readManifest, writeManifest, type ManagedFile } from './manifest.js';
 import { materializeFile, type MaterializeResult } from './materialize.js';
 import { addMcpServer } from './mcp-config.js';
-import { hookEntriesFor, mergeHooks } from './settings.js';
+import { hookEntriesFor, mergeHooks, mergeStatusLine } from './settings.js';
 
 export interface InitOptions {
   force?: boolean;
@@ -78,7 +78,7 @@ export function runInit(cwd: string, options: InitOptions = {}): Promise<InitRep
   const entries = hookEntriesFor(launcher, JSON.parse(readFileSync(plugin.hooksFile, 'utf8')));
   const settingsUpdated = writeJsonIfChanged(
     settingsFile,
-    mergeHooks(readJsonSafe(settingsFile, {}), entries),
+    mergeStatusLine(mergeHooks(readJsonSafe(settingsFile, {}), entries), launcher),
   );
 
   const mcpFile = join(root, '.mcp.json');

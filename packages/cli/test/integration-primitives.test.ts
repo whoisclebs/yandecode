@@ -14,7 +14,13 @@ import { ensureGitignoreEntry, removeGitignoreEntry } from '../src/integration/g
 import { readManifest, writeManifest } from '../src/integration/manifest.js';
 import { materializeFile } from '../src/integration/materialize.js';
 import { addMcpServer, removeMcpServer } from '../src/integration/mcp-config.js';
-import { hookEntriesFor, mergeHooks, removeHooks } from '../src/integration/settings.js';
+import {
+  hookEntriesFor,
+  mergeHooks,
+  mergeStatusLine,
+  removeHooks,
+  removeStatusLine,
+} from '../src/integration/settings.js';
 
 const tmp = (): string => mkdtempSync(join(tmpdir(), 'yc-int-'));
 
@@ -106,6 +112,35 @@ describe('settings hooks merge', () => {
       { hooks: [{ type: 'command', command: 'echo hi' }] },
     ]);
     expect((removed.hooks as Record<string, unknown[]>).PostToolUse).toBeUndefined();
+  });
+});
+
+describe('statusLine merge', () => {
+  it('adds a statusLine command and is idempotent', () => {
+    const settings = { permissions: { allow: ['Bash(npm test)'] } };
+    const once = mergeStatusLine(settings, { command: 'yandecode', args: [] });
+    expect(once.statusLine).toEqual({ type: 'command', command: 'yandecode statusline' });
+    const twice = mergeStatusLine(once, { command: 'yandecode', args: [] });
+    expect(twice).toEqual(once);
+  });
+
+  it('rewrites the command for the npx launcher', () => {
+    const once = mergeStatusLine({}, { command: 'npx', args: ['yandecode'] });
+    expect(once.statusLine).toEqual({ type: 'command', command: 'npx yandecode statusline' });
+  });
+
+  it('never overwrites a statusLine the user configured themselves', () => {
+    const settings = { statusLine: { type: 'command', command: './my-custom-statusline.sh' } };
+    const result = mergeStatusLine(settings, { command: 'yandecode', args: [] });
+    expect(result).toEqual(settings);
+  });
+
+  it('removes only a statusLine it set, leaving a foreign one alone', () => {
+    const ours = mergeStatusLine({}, { command: 'yandecode', args: [] });
+    expect(removeStatusLine(ours).statusLine).toBeUndefined();
+
+    const foreign = { statusLine: { type: 'command', command: './my-custom-statusline.sh' } };
+    expect(removeStatusLine(foreign)).toEqual(foreign);
   });
 });
 

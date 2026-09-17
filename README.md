@@ -143,19 +143,11 @@ or anything you've edited since; `--purge` also deletes `.yandecode/`.
 
 ### Status Line
 
-`yandecode statusline` renders a Claude Code status line from your local `.yandecode/state.db` —
-git branch and dirty state, the active model, session duration, swarm task progress, registered
-hooks, RAG index size and scan freshness. It's read-only and makes no network calls. Enable it by
-adding to `.claude/settings.json`:
-
-```json
-{
-  "statusLine": {
-    "type": "command",
-    "command": "yandecode statusline"
-  }
-}
-```
+`yandecode init` wires a status line into `.claude/settings.json` automatically (unless you've
+already set your own `statusLine`, which is left untouched). It renders from your local
+`.yandecode/state.db` — git branch and dirty state, the active model, session duration, swarm task
+progress, registered hooks, RAG index size and scan freshness. It's read-only and makes no network
+calls. `yandecode uninstall` removes only the entry it added.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -163,7 +155,8 @@ adding to `.claude/settings.json`:
 
 - `.claude/agents/yandecode-*.md` — dispatcher, scout, implementer, tester, reviewer, security, researcher
 - `.claude/skills/yandecode-*/SKILL.md` — context rules and delegation protocol
-- `.claude/settings.json` — `SessionStart`, `PostToolUse`, `SessionEnd` hooks calling `yandecode hook`
+- `.claude/settings.json` — lifecycle hooks calling `yandecode hook` (`SessionStart`, `PostToolUse`,
+  `SessionEnd`, `SubagentStop`, `WorktreeCreate`, `WorktreeRemove`) and a `statusLine` entry
 - `.mcp.json` — the `yandecode` MCP server: 16 tools — `rag_search`/`rag_status`;
   `swarm_create`/`swarm_status`/`swarm_next`/`swarm_cancel`; `task_create`/`task_list`/`task_update`;
   `message_send`/`message_read`; `workspace_reserve`/`workspace_release`;
