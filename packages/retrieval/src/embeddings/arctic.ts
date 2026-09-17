@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { userCacheDir } from '@yandecode/core';
 import {
   AutoTokenizer,
+  env as transformersEnv,
   pipeline,
   type FeatureExtractionPipeline,
   type PreTrainedTokenizer,
@@ -13,6 +14,32 @@ export const QUERY_PREFIX = 'Represent this sentence for searching relevant pass
 export const ARCTIC_MODEL_ID = 'Snowflake/snowflake-arctic-embed-xs';
 export const ARCTIC_DIMENSIONS = 384;
 const BATCH = 16;
+
+// Mirrors the model files (content-identical, flattened path layout) so model
+// download doesn't depend on a single external host being reachable. Override
+// with YANDECODE_MODEL_HOST to point at the original Hugging Face Hub
+// ("https://huggingface.co/", template "{model}/resolve/main/") or a private
+// mirror.
+export const DEFAULT_MODEL_HOST =
+  'https://raw.githubusercontent.com/whoisclebs/yandecode-models/main/';
+const DEFAULT_MODEL_PATH_TEMPLATE = '{model}/';
+
+const HF_HOSTNAMES = new Set(['huggingface.co', 'hf.co']);
+
+export function resolveModelHost(envVars: NodeJS.ProcessEnv = process.env): string {
+  return envVars.YANDECODE_MODEL_HOST ?? DEFAULT_MODEL_HOST;
+}
+
+// The Hub needs a `resolve/{revision}/` segment; our flat mirror layout (and
+// any other plain file host pointed at via YANDECODE_MODEL_HOST) doesn't.
+export function resolveModelPathTemplate(host: string): string {
+  try {
+    if (HF_HOSTNAMES.has(new URL(host).hostname)) return '{model}/resolve/{revision}/';
+  } catch {
+    // Malformed host: fall through to the flat-layout default below.
+  }
+  return DEFAULT_MODEL_PATH_TEMPLATE;
+}
 
 export function resolveModelCacheDir(envVars: NodeJS.ProcessEnv = process.env): string {
   return envVars.YANDECODE_MODEL_DIR ?? join(userCacheDir(envVars), 'models');
@@ -41,6 +68,9 @@ export class ArcticEmbedXsProvider implements EmbeddingProvider {
     this.cacheDir = options.cacheDir;
     this.modelId = options.modelId ?? ARCTIC_MODEL_ID;
     this.idleTimeoutMs = options.idleTimeoutMs ?? 5 * 60_000;
+    const host = resolveModelHost();
+    transformersEnv.remoteHost = host;
+    transformersEnv.remotePathTemplate = resolveModelPathTemplate(host);
   }
 
   private touch(): void {

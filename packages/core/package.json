@@ -1,6 +1,6 @@
 {
   "name": "@yandecode/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "YandeCode core: configuration, workspace paths, SQLite persistence, security utilities",
   "license": "MIT",
   "type": "module",

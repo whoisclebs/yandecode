@@ -1,6 +1,6 @@
 {
   "name": "@yandecode/swarm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "YandeCode swarm: task DAG, scheduler, leases, messaging, memory",
   "license": "MIT",
   "type": "module",
@@ -23,8 +23,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@yandecode/core": "0.1.0",
-    "@yandecode/retrieval": "0.1.0",
+    "@yandecode/core": "0.1.1",
+    "@yandecode/retrieval": "0.1.1",
     "minimatch": "^10.0.1"
   }
 }

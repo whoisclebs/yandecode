@@ -11,6 +11,7 @@ export {
   QUERY_PREFIX,
   modelIsCached,
   resolveModelCacheDir,
+  resolveModelHost,
   type ArcticOptions,
 } from './embeddings/arctic.js';
 export { DEFAULT_LIMITS, type Chunk, type ChunkLimits, type Chunker } from './chunking/types.js';

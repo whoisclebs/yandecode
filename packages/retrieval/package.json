@@ -1,6 +1,6 @@
 {
   "name": "@yandecode/retrieval",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "YandeCode retrieval: embeddings, chunking, indexing, hybrid search (Phase 2)",
   "license": "MIT",
   "type": "module",
@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.0",
-    "@yandecode/core": "0.1.0",
+    "@yandecode/core": "0.1.1",
     "ignore": "^7.0.9",
     "tree-sitter-wasms": "0.1.13",
     "usearch": "^2.26.2",

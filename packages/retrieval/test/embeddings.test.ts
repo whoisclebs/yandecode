@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { QUERY_PREFIX, modelIsCached, resolveModelCacheDir } from '../src/embeddings/arctic.js';
+import {
+  DEFAULT_MODEL_HOST,
+  QUERY_PREFIX,
+  modelIsCached,
+  resolveModelCacheDir,
+  resolveModelHost,
+  resolveModelPathTemplate,
+} from '../src/embeddings/arctic.js';
 import { HashEmbeddingProvider } from '../src/embeddings/hash-provider.js';
 import { ApproxTokenCounter } from '../src/embeddings/provider.js';
 
@@ -52,5 +59,17 @@ describe('Arctic helpers', () => {
   });
   it('modelIsCached is false for an empty dir', () => {
     expect(modelIsCached('/definitely/not/here')).toBe(false);
+  });
+  it('defaults to the GitHub mirror, overridable via YANDECODE_MODEL_HOST', () => {
+    expect(resolveModelHost({})).toBe(DEFAULT_MODEL_HOST);
+    expect(resolveModelHost({ YANDECODE_MODEL_HOST: 'https://example.com/models/' })).toBe(
+      'https://example.com/models/',
+    );
+  });
+  it('uses the Hub-style path template only for huggingface.co/hf.co hosts', () => {
+    expect(resolveModelPathTemplate(DEFAULT_MODEL_HOST)).toBe('{model}/');
+    expect(resolveModelPathTemplate('https://huggingface.co/')).toBe('{model}/resolve/{revision}/');
+    expect(resolveModelPathTemplate('https://hf.co/')).toBe('{model}/resolve/{revision}/');
+    expect(resolveModelPathTemplate('not a url')).toBe('{model}/');
   });
 });

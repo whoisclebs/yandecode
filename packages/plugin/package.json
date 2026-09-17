@@ -1,6 +1,6 @@
 {
   "name": "@yandecode/plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "YandeCode Claude Code plugin content: agents, skills, hooks, MCP config",
   "license": "MIT",
   "type": "module",
