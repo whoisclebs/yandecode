@@ -36,6 +36,7 @@
     "@yandecode/core": "0.1.0",
     "@yandecode/plugin": "0.1.0",
     "@yandecode/retrieval": "0.1.0",
+    "@yandecode/swarm": "0.1.0",
     "commander": "^15.0.0",
     "zod": "^4.6.5"
   }

@@ -205,6 +205,18 @@ export class SwarmService {
     return { cancelledTaskIds, pendingWorktrees };
   }
 
+  taskList(swarmId: string, statuses?: TaskStatus[]): TaskRecord[] {
+    return statuses && statuses.length > 0 ? this.deps.tasks.listByStatus(swarmId, statuses) : this.deps.tasks.listBySwarm(swarmId);
+  }
+
+  getSwarm(swarmId: string): SwarmRecord | null {
+    return this.deps.swarms.get(swarmId);
+  }
+
+  getTask(taskId: string): TaskRecord | null {
+    return this.deps.tasks.get(taskId);
+  }
+
   async workspaceReserve(input: {
     swarmId: string;
     taskId: string;
