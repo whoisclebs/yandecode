@@ -117,6 +117,15 @@ describe('MCP server', () => {
     await close();
   });
 
+  it('prepends a note before the envelope when one is provided', async () => {
+    const { client, rt, close } = await connect(() => Promise.resolve([]), () => 'NOTE: 42 files changed since the last index; run "yandecode index".');
+    rt.state.db.exec(`INSERT INTO documents (id,path,size_bytes,content_hash,indexed_at,index_generation) VALUES ('d','a.ts',1,'h','now',1);
+      INSERT INTO chunks (id,document_id,vector_id,kind,start_line,end_line,content,content_hash,token_count,created_at,updated_at) VALUES ('c','d',1,'function',1,1,'x','h',1,'now','now');`);
+    const r = await client.callTool({ name: 'rag_search', arguments: { query: 'x' } });
+    expect(text(r)).toMatch(/^NOTE: 42 files changed since the last index; run "yandecode index"\.\n\nUNTRUSTED_REPOSITORY_CONTEXT/);
+    await close();
+  });
+
   it('formatHits handles no results', () => {
     expect(formatHits('x', [])).toContain('0 results');
   });

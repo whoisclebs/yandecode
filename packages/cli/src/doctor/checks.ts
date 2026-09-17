@@ -10,6 +10,7 @@ import {
   schemaVersion,
   sha256,
 } from '@yandecode/core';
+import { listGenerations, modelIsCached, resolveModelCacheDir, USearchVectorIndex } from '@yandecode/retrieval';
 import { CLAUDE_MD_START } from '../integration/claude-md.js';
 import { isMalformedJson, readJsonSafe } from '../integration/json-utils.js';
 import { readManifest } from '../integration/manifest.js';
@@ -58,6 +59,48 @@ function notInitialized(name: string): CheckResult {
   return { name, status: 'fail', detail: 'workspace not initialized', fix: INIT_FIX };
 }
 
+function embeddingModelCheck(): CheckResult {
+  const cacheDir = resolveModelCacheDir(process.env);
+  return modelIsCached(cacheDir)
+    ? { name: 'Embedding model', status: 'ok', detail: cacheDir }
+    : { name: 'Embedding model', status: 'warn', detail: 'not downloaded; runs on first index' };
+}
+
+function usearchCheck(): CheckResult {
+  try {
+    new USearchVectorIndex({ dimensions: 384, file: null });
+    return { name: 'USearch', status: 'ok', detail: 'native binary loaded' };
+  } catch (error) {
+    return { name: 'USearch', status: 'fail', detail: (error as Error).message, fix: 'reinstall yandecode; native binary failed to load' };
+  }
+}
+
+function repositoryIndexCheck(stateDbFile: string, indexesDir: string): CheckResult {
+  if (!existsSync(stateDbFile)) return { name: 'Repository index', status: 'skip', detail: 'no database' };
+  const db = openDatabase(stateDbFile);
+  try {
+    const meta = db.prepare('SELECT generation, vector_count, file_path FROM vector_index_meta WHERE name = ?').get('repository') as
+      | { generation: number; vector_count: number; file_path: string }
+      | undefined;
+    if (!meta) return { name: 'Repository index', status: 'warn', detail: 'not built; run yandecode index' };
+    const chunks = (db.prepare('SELECT COUNT(*) AS c FROM chunks').get() as { c: number }).c;
+    const onDisk = existsSync(indexesDir) ? listGenerations(indexesDir, 'repository') : [];
+    const maxOnDisk = onDisk.length > 0 ? Math.max(...onDisk) : null;
+    const outOfSync = !existsSync(meta.file_path) || meta.vector_count !== chunks || (maxOnDisk !== null && maxOnDisk !== meta.generation);
+    if (outOfSync) {
+      return {
+        name: 'Repository index',
+        status: 'fail',
+        detail: `VECTOR INDEX OUT OF SYNC\nMetadata generation: ${meta.generation}\nVector generation: ${maxOnDisk ?? 'missing'}`,
+        fix: 'yandecode index --rebuild-vectors',
+      };
+    }
+    return { name: 'Repository index', status: 'ok', detail: `${chunks} chunks, generation ${meta.generation}` };
+  } finally {
+    db.close();
+  }
+}
+
 export function runDoctor(deps: DoctorDeps): CheckResult[] {
   const results: CheckResult[] = [];
   const major = Number.parseInt(deps.nodeVersion.replace(/^v/, '').split('.')[0] ?? '0', 10);
@@ -97,8 +140,9 @@ export function runDoctor(deps: DoctorDeps): CheckResult[] {
   ];
   if (!paths) {
     for (const name of projectChecks) results.push(notInitialized(name));
-    results.push({ name: 'Repository index', status: 'skip', detail: 'not built yet' });
-    results.push({ name: 'Embedding model', status: 'skip', detail: 'not checked in v0 Part 1' });
+    results.push(embeddingModelCheck());
+    results.push(usearchCheck());
+    results.push({ name: 'Repository index', status: 'skip', detail: 'workspace not initialized' });
     return results;
   }
 
@@ -245,8 +289,9 @@ export function runDoctor(deps: DoctorDeps): CheckResult[] {
     }
   }
 
-  results.push({ name: 'Repository index', status: 'skip', detail: 'not built yet' });
-  results.push({ name: 'Embedding model', status: 'skip', detail: 'not checked in v0 Part 1' });
+  results.push(embeddingModelCheck());
+  results.push(usearchCheck());
+  results.push(repositoryIndexCheck(paths.stateDb, paths.indexesDir));
   return results;
 }
 

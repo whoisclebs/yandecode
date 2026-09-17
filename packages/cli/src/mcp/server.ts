@@ -105,7 +105,9 @@ export function createMcpServer(deps: McpDeps): McpServer {
       }
       const hits = await deps.search(query, { limit: limit ?? rt.config.rag.maxResults });
       await rt.events.emit({ event: 'rag_search', data: { query, results: hits.length } });
-      return { content: [{ type: 'text', text: formatHits(query, hits) }] };
+      const note = deps.note?.();
+      const text = note ? `${note}\n\n${formatHits(query, hits)}` : formatHits(query, hits);
+      return { content: [{ type: 'text', text }] };
     },
   );
 

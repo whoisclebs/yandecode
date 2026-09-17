@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { doctorExitCode, formatDoctor, runDoctor } from '../src/doctor/checks.js';
+import { openRuntime } from '../src/context.js';
 import { runInit } from '../src/integration/init.js';
 
 const probeAllOk = (cmd: string): string | null =>
@@ -62,7 +63,9 @@ describe('runDoctor', () => {
     ]) {
       expect(byName(results, name).status, name).toBe('ok');
     }
-    expect(byName(results, 'Repository index').status).toBe('skip');
+    expect(byName(results, 'Repository index').status).toBe('warn');
+    expect(['ok', 'warn']).toContain(byName(results, 'Embedding model').status);
+    expect(byName(results, 'USearch').status).toBe('ok');
     expect(doctorExitCode(results)).toBe(0);
     writeFileSync(join(cwd, '.claude', 'agents', 'yandecode-scout.md'), 'edited');
     results = runDoctor({
@@ -116,5 +119,17 @@ describe('runDoctor', () => {
     expect(text).toContain('Claude Code          OK      2.1.273');
     expect(text).toContain('Config               FAIL    yandecode.json not found');
     expect(text).toContain('  Fix: yandecode init');
+  });
+
+  it('flags a repository index that is out of sync with its metadata', async () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'yc-doc-outofsync-'));
+    await runInit(cwd, { launcher: { command: 'yandecode', args: [] } });
+    const rt = openRuntime(cwd);
+    await rt.index.setMeta({ name: 'repository', generation: 3, dimensions: 384, modelId: 'x', vectorCount: 5, builtAt: '2026-01-01T00:00:00.000Z', filePath: join(cwd, 'nowhere.usearch') });
+    rt.close();
+    const results = runDoctor({ cwd, probeVersion: probeAllOk, nodeVersion: 'v22.22.3', yandecodeVersion: '0.1.0' });
+    expect(byName(results, 'Repository index').status).toBe('fail');
+    expect(byName(results, 'Repository index').detail).toContain('VECTOR INDEX OUT OF SYNC');
+    expect(byName(results, 'Repository index').fix).toBe('yandecode index --rebuild-vectors');
   });
 });

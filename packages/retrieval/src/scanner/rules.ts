@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { CONFIG_FILENAME } from '@yandecode/core';
 import ignore, { type Ignore } from 'ignore';
 
 export const DEFAULT_IGNORED_DIRS = [
@@ -27,6 +28,9 @@ export function buildIgnore(root: string): Ignore {
   const ig = ignore();
   ig.add(DEFAULT_IGNORED_DIRS.map((dir) => `${dir}/`));
   ig.add([...SECRET_PATTERNS]);
+  // The workspace's own config marker lives at the project root; it is workspace
+  // metadata, not repository content, so it never belongs in the searchable index.
+  ig.add(`/${CONFIG_FILENAME}`);
   const custom = join(root, '.yandecodeignore');
   if (existsSync(custom)) ig.add(readFileSync(custom, 'utf8'));
   return ig;
