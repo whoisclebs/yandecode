@@ -324,4 +324,15 @@ describe('SwarmService.workspaceReserve / workspaceRelease', () => {
     expect(result.granted).toBe(true);
     state.close();
   });
+
+  it('rejects workspaceReserve when the taskId does not belong to the given swarmId', async () => {
+    const { state, service } = setup();
+    const swarmA = await service.createSwarm({ title: 'a', goal: 'g', strategy: 'adaptive', sessionId: null });
+    const swarmB = await service.createSwarm({ title: 'b', goal: 'g', strategy: 'adaptive', sessionId: null });
+    const [taskInA] = await service.taskCreate(swarmA.id, [{ ref: 'a', title: 'a', description: 'd', role: 'implementer' }]);
+    await expect(
+      service.workspaceReserve({ swarmId: swarmB.id, taskId: taskInA!.id, patterns: ['x/**'], holderAgent: 'x' }),
+    ).rejects.toThrow('TASK_SWARM_MISMATCH');
+    state.close();
+  });
 });

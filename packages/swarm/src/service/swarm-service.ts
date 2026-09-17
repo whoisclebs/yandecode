@@ -211,30 +211,13 @@ export class SwarmService {
     patterns: string[];
     holderAgent: string;
   }): Promise<WorkspaceReserveResult> {
-    // Only checked against already-persisted active leases (not against other patterns in this same
-    // request) — a caller submitting two self-conflicting patterns in one call is a caller bug, not
-    // a resource conflict this method needs to arbitrate.
-    const active = this.deps.leases.listActive(input.swarmId);
-    const conflicts: LeaseRecord[] = [];
-    for (const pattern of input.patterns) {
-      for (const lease of active) {
-        if (leaseConflicts(pattern, lease.pattern) && !conflicts.includes(lease))
-          conflicts.push(lease);
-      }
+    const task = this.deps.tasks.get(input.taskId);
+    if (!task || task.swarmId !== input.swarmId) {
+      throw new YandeCodeError('TASK_SWARM_MISMATCH', `task ${input.taskId} does not belong to swarm ${input.swarmId}`);
     }
-    if (conflicts.length > 0) return { granted: false, leases: [], conflicts };
-    const leases: LeaseRecord[] = [];
-    for (const pattern of input.patterns) {
-      leases.push(
-        await this.deps.leases.create({
-          swarmId: input.swarmId,
-          taskId: input.taskId,
-          pattern,
-          holderAgent: input.holderAgent,
-        }),
-      );
-    }
-    return { granted: true, leases, conflicts: [] };
+    return this.deps.leases.reserveIfNoConflict(input, (pattern, active) =>
+      active.filter((lease) => leaseConflicts(pattern, lease.pattern)),
+    );
   }
 
   workspaceRelease(taskId: string): Promise<void> {

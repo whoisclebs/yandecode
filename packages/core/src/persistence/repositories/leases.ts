@@ -85,4 +85,55 @@ export class LeaseRepository {
       db.prepare('UPDATE leases SET released_at = ? WHERE swarm_id = ? AND released_at IS NULL').run(nowIso(), swarmId);
     });
   }
+
+  // Performs the read-active-leases -> check-conflicts -> create-all-leases sequence inside a
+  // single state.write() transaction, so it is atomic with respect to every other write() call
+  // (they're all serialized through one FIFO queue). This closes the TOCTOU window that existed
+  // when the read and the creates were separate, individually-queued operations: a second,
+  // genuinely concurrent reserve call can no longer observe "no conflict" mid-way through this
+  // one's creates. The conflict comparison itself is injected via `conflictsWith` so this package
+  // stays free of any dependency on @yandecode/swarm's `leaseConflicts` function.
+  //
+  // Note: `conflictsWith` is only checked against already-persisted active leases (not against
+  // other patterns within the same `input.patterns` call) — a caller submitting two
+  // self-conflicting patterns in one call is a caller bug, not a resource conflict this method
+  // needs to arbitrate.
+  reserveIfNoConflict(
+    input: { swarmId: string; taskId: string; patterns: string[]; holderAgent: string; ttlMs?: number },
+    conflictsWith: (pattern: string, activeLeases: LeaseRecord[]) => LeaseRecord[],
+  ): Promise<{ granted: boolean; leases: LeaseRecord[]; conflicts: LeaseRecord[] }> {
+    return this.state.write((db) => {
+      const now = nowIso();
+      const activeRows = db
+        .prepare('SELECT * FROM leases WHERE swarm_id = ? AND released_at IS NULL AND expires_at > ? ORDER BY acquired_at')
+        .all(input.swarmId, now) as Row[];
+      const active = activeRows.map(fromRow);
+      const conflicts: LeaseRecord[] = [];
+      for (const pattern of input.patterns) {
+        for (const lease of conflictsWith(pattern, active)) {
+          if (!conflicts.includes(lease)) conflicts.push(lease);
+        }
+      }
+      if (conflicts.length > 0) return { granted: false, leases: [], conflicts };
+      const ttl = input.ttlMs ?? LEASE_TTL_MS;
+      const leases: LeaseRecord[] = [];
+      for (const pattern of input.patterns) {
+        const id = newId();
+        const nowMs = Date.now();
+        const acquiredAt = new Date(nowMs).toISOString();
+        const expiresAt = new Date(nowMs + ttl).toISOString();
+        db.prepare('INSERT INTO leases (id, swarm_id, task_id, pattern, holder_agent, acquired_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+          id,
+          input.swarmId,
+          input.taskId,
+          pattern,
+          input.holderAgent,
+          acquiredAt,
+          expiresAt,
+        );
+        leases.push({ id, swarmId: input.swarmId, taskId: input.taskId, pattern, holderAgent: input.holderAgent, acquiredAt, expiresAt, releasedAt: null });
+      }
+      return { granted: true, leases, conflicts: [] };
+    });
+  }
 }

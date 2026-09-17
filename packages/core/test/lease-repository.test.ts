@@ -77,4 +77,23 @@ describe('LeaseRepository', () => {
     void mine;
     state.close();
   });
+
+  it('reserveIfNoConflict grants and creates leases atomically when there is no conflict', async () => {
+    const { state, leases, swarmId, taskId } = await setup();
+    const result = await leases.reserveIfNoConflict({ swarmId, taskId, patterns: ['a/**', 'b/**'], holderAgent: 'x' }, () => []);
+    expect(result.granted).toBe(true);
+    expect(result.leases).toHaveLength(2);
+    expect(leases.listActive(swarmId)).toHaveLength(2);
+    state.close();
+  });
+
+  it('reserveIfNoConflict denies and creates nothing when the conflict callback reports a conflict', async () => {
+    const { state, leases, swarmId, taskId } = await setup();
+    const existing = await leases.create({ swarmId, taskId, pattern: 'a/**', holderAgent: 'x' });
+    const result = await leases.reserveIfNoConflict({ swarmId, taskId, patterns: ['a/**'], holderAgent: 'y' }, (_pattern, active) => active);
+    expect(result.granted).toBe(false);
+    expect(result.conflicts.map((l) => l.id)).toEqual([existing.id]);
+    expect(leases.listActive(swarmId)).toHaveLength(1);
+    state.close();
+  });
 });
