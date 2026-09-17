@@ -52,3 +52,5 @@ export {
   type TaskStatus,
 } from './persistence/repositories/tasks.js';
 export { LeaseRepository, LEASE_TTL_MS, type LeaseRecord } from './persistence/repositories/leases.js';
+export { WorkspaceRepository, type WorkspaceKind, type WorkspaceRecord } from './persistence/repositories/workspaces.js';
+export { MessageRepository, MESSAGE_PAYLOAD_MAX_BYTES, type MessageRecord, type MessageType } from './persistence/repositories/messages.js';
