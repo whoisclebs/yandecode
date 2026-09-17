@@ -27,3 +27,12 @@ export {
   type Migration,
 } from './persistence/migrations/index.js';
 export { StateService } from './persistence/state-service.js';
+export { SessionRepository, type SessionRecord } from './persistence/repositories/sessions.js';
+export { EventRepository, type EventInput, type EventRecord } from './persistence/repositories/events.js';
+export {
+  IndexRepository,
+  type DirtyEntry,
+  type IndexName,
+  type VectorIndexMeta,
+} from './persistence/repositories/index-meta.js';
+export { EventLog } from './events/event-log.js';
