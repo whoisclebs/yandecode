@@ -30,3 +30,14 @@ export {
   type IndexRunOptions,
   type IndexStatus,
 } from './service/indexing-service.js';
+export { applyBoosts, type BoostCandidate } from './fusion/boosts.js';
+export { maximalMarginalRelevance, type MmrCandidate } from './fusion/mmr.js';
+export { reciprocalRankFusion } from './fusion/rrf.js';
+export {
+  DEFAULT_RETRIEVER_CONSTANTS,
+  HybridRetriever,
+  type HybridRetrieverConstants,
+  type HybridRetrieverDeps,
+  type HybridSearchOptions,
+  type RagHit,
+} from './service/hybrid-retriever.js';
