@@ -141,6 +141,24 @@ or anything you've edited since; `--purge` also deletes `.yandecode/`.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+### Status Line
+
+`yandecode statusline` renders a Claude Code status line from your local `.yandecode/state.db` —
+git branch and dirty state, the active model, session duration, swarm task progress, registered
+hooks, RAG index size and scan freshness. It's read-only and makes no network calls. Enable it by
+adding to `.claude/settings.json`:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "yandecode statusline"
+  }
+}
+```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## What Gets Added To Your Project
 
 - `.claude/agents/yandecode-*.md` — dispatcher, scout, implementer, tester, reviewer, security, researcher

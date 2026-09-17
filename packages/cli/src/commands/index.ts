@@ -10,4 +10,5 @@ import './rag.js';
 import './index-cmd.js';
 import './start.js';
 import './swarm.js';
+import './statusline.js';
 export {};
