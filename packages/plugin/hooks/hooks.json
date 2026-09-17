@@ -1,0 +1,17 @@
+{
+  "description": "YandeCode lifecycle hooks: session tracking and incremental index dirty-marking",
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "yandecode hook SessionStart", "timeout": 10 }] }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "hooks": [{ "type": "command", "command": "yandecode hook PostToolUse", "timeout": 10 }]
+      }
+    ],
+    "SessionEnd": [
+      { "hooks": [{ "type": "command", "command": "yandecode hook SessionEnd", "timeout": 10 }] }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "yandecode",
+  "description": "YandeCode: hybrid RAG, disciplined delegation and lifecycle hooks for Claude Code",
+  "version": "0.1.0",
+  "author": { "name": "whoisclebs" },
+  "homepage": "https://github.com/whoisclebs/yandecode",
+  "repository": "https://github.com/whoisclebs/yandecode",
+  "license": "MIT"
+}

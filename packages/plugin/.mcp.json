@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "yandecode": { "command": "yandecode", "args": ["mcp", "serve"] }
+  }
+}
