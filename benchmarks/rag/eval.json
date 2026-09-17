@@ -1,0 +1,14 @@
+[
+  { "query": "where is JWT validation performed?", "expectedFiles": ["src/security/JwtValidator.ts"], "expectedSymbols": ["JwtValidator.validate"] },
+  { "query": "how are user passwords hashed and verified", "expectedFiles": ["src/security/PasswordHasher.ts"], "expectedSymbols": ["PasswordHasher.hash"] },
+  { "query": "integration test for login", "expectedFiles": ["test/auth.integration.test.ts"] },
+  { "query": "why opaque tokens instead of JWT", "expectedFiles": ["docs/adr/001-opaque-tokens.md"] },
+  { "query": "where are session tokens created and revoked", "expectedFiles": ["src/auth/SessionStore.ts"], "expectedSymbols": ["SessionStore.create"] },
+  { "query": "how does SSO login create or find a user", "expectedFiles": ["src/users/UserRepository.ts"], "expectedSymbols": ["UserRepository.findOrCreateBySso"] },
+  { "query": "what HTTP status code is returned for invalid credentials", "expectedFiles": ["src/http/errors.ts"], "expectedSymbols": ["InvalidCredentialsError"] },
+  { "query": "how does the router dispatch a request to a handler", "expectedFiles": ["src/http/Router.ts"], "expectedSymbols": ["Router.dispatch"] },
+  { "query": "where is the logout endpoint handled", "expectedFiles": ["src/auth/AuthController.ts"], "expectedSymbols": ["AuthController.handleLogout"] },
+  { "query": "default session ttl configuration", "expectedFiles": ["src/security/SecurityConfig.ts"], "expectedSymbols": ["loadSecurityConfig"] },
+  { "query": "project overview and module layout", "expectedFiles": ["README.md"] },
+  { "query": "how are SSO tokens signed in tests", "expectedFiles": ["test/auth.integration.test.ts"], "expectedSymbols": ["signSsoToken"] }
+]

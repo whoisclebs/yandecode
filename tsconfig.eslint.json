@@ -5,6 +5,7 @@
     "packages/*/src/**/*.ts",
     "packages/*/test/**/*.ts",
     "packages/plugin/*.ts",
+    "benchmarks/rag/*.ts",
     "vitest.config.ts",
     "vitest.slow.config.ts"
   ]
